@@ -3,153 +3,141 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manette Robot Puff</title>
+    <title>HotWheels Controller</title>
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            text-align: center;
-            background-color: #1a1a1a;
-            color: #ffffff;
-            margin: 0;
+            font-family: sans-serif;
             display: flex;
             flex-direction: column;
+            align-items: center;
             justify-content: center;
             height: 100vh;
-            overflow: hidden;
+            margin: 0;
+            background-color: #1a1a1a;
+            color: white;
         }
 
-        h1 { color: #00ff88; margin-bottom: 10px; font-size: 1.5rem; }
+        h1 { color: #ff4500; margin-bottom: 20px; }
 
-        .status-container { margin-bottom: 20px; font-size: 0.9rem; color: #aaa; }
-        #status { font-weight: bold; color: #ff4444; }
+        .status { margin-bottom: 20px; padding: 10px; border-radius: 5px; background: #333; }
 
-        button {
-            background-color: #00ff88;
-            border: none;
-            color: #1a1a1a;
-            padding: 15px 30px;
-            font-size: 1rem;
-            font-weight: bold;
-            border-radius: 50px;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);
-            transition: transform 0.2s;
-        }
-
-        button:active { transform: scale(0.95); }
-
-        .slider-container {
-            margin: 40px auto;
+        /* Le gros slider */
+        input[type=range] {
             width: 80%;
-            max-width: 400px;
-        }
-
-        /* Style du Slider */
-        .slider {
-            -webkit-appearance: none;
-            width: 100%;
-            height: 15px;
-            border-radius: 10px;
-            background: #333;
-            outline: none;
-        }
-
-        .slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background: #00ff88;
+            max-width: 600px;
+            height: 80px; /* Très haut pour la précision tactile */
             cursor: pointer;
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
         }
 
         .value-display {
-            font-size: 4rem;
+            font-size: 3rem;
             font-weight: bold;
-            margin-top: 20px;
-            color: #00ff88;
+            margin: 20px;
+            color: #00ffcc;
         }
 
-        .instruction { font-size: 0.8rem; color: #666; margin-top: 10px; }
+        button {
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            background-color: #ff4500;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        button:disabled { background-color: #555; }
+        button:hover:not(:disabled) { background-color: #ff6347; }
     </style>
 </head>
 <body>
 
-    <h1>🤖 Robot Puff BLE</h1>
+    <h1>RC Control</h1>
 
-    <div class="status-container">
-        Statut : <span id="status">Déconnecté</span>
-    </div>
+    <div class="status" id="status">Statut : Déconnecté</div>
+    
+    <button id="connectBtn">SE CONNECTER À LA VOITURE</button>
 
-    <button onclick="connectBT()">SE CONNECTER</button>
-
-    <div class="slider-container">
-        <input type="range" min="-100" max="100" value="0" class="slider" id="motorSlider">
-        <div class="value-display" id="valDisplay">0%</div>
-        <p class="instruction">Glisse pour avancer/reculer. Relâche pour stopper.</p>
-    </div>
+    <div class="value-display" id="valDisplay">0%</div>
+    
+    <input type="range" id="motorSlider" min="-100" max="100" value="0">
 
     <script>
-        let device, characteristic;
-        // UUIDs identiques au code Arduino
         const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
         const CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8";
 
+        let characteristic = null;
+        let lastSentValue = 0;
+        let isSending = false;
+
+        const connectBtn = document.getElementById('connectBtn');
+        const statusText = document.getElementById('status');
         const slider = document.getElementById('motorSlider');
         const valDisplay = document.getElementById('valDisplay');
-        const statusText = document.getElementById('status');
 
-        // Connexion au Robot
-        async function connectBT() {
+        // Fonction de connexion
+        connectBtn.addEventListener('click', async () => {
             try {
                 statusText.innerText = "Recherche...";
-                device = await navigator.bluetooth.requestDevice({
-                    filters: [{ name: 'Robot-Puff-BLE' }],
+                
+                const device = await navigator.bluetooth.requestDevice({
+                    filters: [{ namePrefix: 'HotWheels' }],
                     optionalServices: [SERVICE_UUID]
                 });
 
+                statusText.innerText = "Connexion au serveur...";
                 const server = await device.gatt.connect();
+
+                statusText.innerText = "Récupération du service...";
                 const service = await server.getPrimaryService(SERVICE_UUID);
+
+                statusText.innerText = "Prêt à piloter !";
                 characteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
 
-                statusText.innerText = "Connecté !";
-                statusText.style.color = "#00ff88";
+                connectBtn.disabled = true;
+                connectBtn.innerText = "CONNECTÉ";
+                connectBtn.style.backgroundColor = "#28a745";
+
             } catch (error) {
                 console.error(error);
-                statusText.innerText = "Erreur de connexion";
-                statusText.style.color = "#ff4444";
+                statusText.innerText = "Erreur : " + error.message;
             }
-        }
-
-        // Envoi de la valeur à l'ESP32
-        async function sendValue(val) {
-            if (characteristic) {
-                try {
-                    const data = new TextEncoder().encode(val.toString());
-                    await characteristic.writeValue(data);
-                } catch (e) {
-                    console.log("Erreur d'envoi : " + e);
-                }
-            }
-        }
-
-        // Événements du Slider
-        slider.addEventListener('input', () => {
-            valDisplay.innerText = slider.value + "%";
-            sendValue(slider.value);
         });
 
-        // Retour à zéro quand on relâche
-        const resetSlider = () => {
-            slider.value = 0;
+        // Fonction d'envoi de données
+        async function sendValue(value) {
+            if (!characteristic || isSending) return;
+            
+            isSending = true;
+            try {
+                // On envoie la valeur sous forme de texte (String) comme attendu par ton ESP32
+                const encoder = new TextEncoder();
+                await characteristic.writeValue(encoder.encode(value.toString()));
+                lastSentValue = value;
+            } catch (error) {
+                console.log("Erreur d'envoi: " + error);
+            }
+            isSending = false;
+        }
+
+        // Ecouteur du slider
+        slider.addEventListener('input', (e) => {
+            const val = e.target.value;
+            valDisplay.innerText = val + "%";
+            
+            // On n'envoie que si la valeur a changé pour ne pas saturer le BT
+            if (val !== lastSentValue) {
+                sendValue(val);
+            }
+        });
+
+        // Remettre à zéro quand on relâche le slider (sécurité)
+        slider.addEventListener('change', (e) => {
+            e.target.value = 0;
             valDisplay.innerText = "0%";
             sendValue(0);
-        };
-
-        slider.addEventListener('touchend', resetSlider);
-        slider.addEventListener('mouseup', resetSlider);
+        });
 
     </script>
 </body>
