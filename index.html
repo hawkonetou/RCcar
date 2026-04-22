@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manette Robot Puff</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-align: center;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        h1 { color: #00ff88; margin-bottom: 10px; font-size: 1.5rem; }
+
+        .status-container { margin-bottom: 20px; font-size: 0.9rem; color: #aaa; }
+        #status { font-weight: bold; color: #ff4444; }
+
+        button {
+            background-color: #00ff88;
+            border: none;
+            color: #1a1a1a;
+            padding: 15px 30px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);
+            transition: transform 0.2s;
+        }
+
+        button:active { transform: scale(0.95); }
+
+        .slider-container {
+            margin: 40px auto;
+            width: 80%;
+            max-width: 400px;
+        }
+
+        /* Style du Slider */
+        .slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 15px;
+            border-radius: 10px;
+            background: #333;
+            outline: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #00ff88;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        .value-display {
+            font-size: 4rem;
+            font-weight: bold;
+            margin-top: 20px;
+            color: #00ff88;
+        }
+
+        .instruction { font-size: 0.8rem; color: #666; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <h1>🤖 Robot Puff BLE</h1>
+
+    <div class="status-container">
+        Statut : <span id="status">Déconnecté</span>
+    </div>
+
+    <button onclick="connectBT()">SE CONNECTER</button>
+
+    <div class="slider-container">
+        <input type="range" min="-100" max="100" value="0" class="slider" id="motorSlider">
+        <div class="value-display" id="valDisplay">0%</div>
+        <p class="instruction">Glisse pour avancer/reculer. Relâche pour stopper.</p>
+    </div>
+
+    <script>
+        let device, characteristic;
+        // UUIDs identiques au code Arduino
+        const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
+        const CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8";
+
+        const slider = document.getElementById('motorSlider');
+        const valDisplay = document.getElementById('valDisplay');
+        const statusText = document.getElementById('status');
+
+        // Connexion au Robot
+        async function connectBT() {
+            try {
+                statusText.innerText = "Recherche...";
+                device = await navigator.bluetooth.requestDevice({
+                    filters: [{ name: 'Robot-Puff-BLE' }],
+                    optionalServices: [SERVICE_UUID]
+                });
+
+                const server = await device.gatt.connect();
+                const service = await server.getPrimaryService(SERVICE_UUID);
+                characteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
+
+                statusText.innerText = "Connecté !";
+                statusText.style.color = "#00ff88";
+            } catch (error) {
+                console.error(error);
+                statusText.innerText = "Erreur de connexion";
+                statusText.style.color = "#ff4444";
+            }
+        }
+
+        // Envoi de la valeur à l'ESP32
+        async function sendValue(val) {
+            if (characteristic) {
+                try {
+                    const data = new TextEncoder().encode(val.toString());
+                    await characteristic.writeValue(data);
+                } catch (e) {
+                    console.log("Erreur d'envoi : " + e);
+                }
+            }
+        }
+
+        // Événements du Slider
+        slider.addEventListener('input', () => {
+            valDisplay.innerText = slider.value + "%";
+            sendValue(slider.value);
+        });
+
+        // Retour à zéro quand on relâche
+        const resetSlider = () => {
+            slider.value = 0;
+            valDisplay.innerText = "0%";
+            sendValue(0);
+        };
+
+        slider.addEventListener('touchend', resetSlider);
+        slider.addEventListener('mouseup', resetSlider);
+
+    </script>
+</body>
+</html>
