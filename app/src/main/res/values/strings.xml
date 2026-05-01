@@ -4,6 +4,9 @@
     <string name="notif_channel_name">HotWheels connection</string>
     <string name="notif_title">HotWheelsCommand</string>
     <string name="notif_text_connected">Connected to %1$s</string>
+    <string name="notif_state_idle">Standby</string>
+    <string name="notif_state_connecting">Connecting to %1$s…</string>
+    <string name="notif_state_failed">Connection lost</string>
     <string name="notif_action_stop_motor">CUT MOTOR</string>
     <string name="notif_action_disconnect">DISCONNECT</string>
 </resources>

@@ -68,6 +68,9 @@ class BluetoothCarService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        // Must call startForeground within 5s of startForegroundService — show a placeholder
+        // notification immediately, before the user has even chosen a device.
+        startForeground(NOTIF_ID, buildNotification(getString(R.string.notif_state_idle)))
         ContextCompat.registerReceiver(
             this,
             disconnectionReceiver,
@@ -84,6 +87,11 @@ class BluetoothCarService : Service() {
         return START_STICKY
     }
 
+    private fun updateNotification(text: String) {
+        val mgr = getSystemService(NOTIFICATION_SERVICE) as android.app.NotificationManager
+        mgr.notify(NOTIF_ID, buildNotification(text))
+    }
+
     fun setTargetValue(value: Int) {
         connection?.setTargetValue(value)
     }
@@ -96,8 +104,10 @@ class BluetoothCarService : Service() {
     @SuppressLint("MissingPermission")
     private suspend fun doConnect(deviceName: String, macAddress: String) {
         _state.value = ConnectionState.Connecting(deviceName, macAddress)
+        updateNotification(getString(R.string.notif_state_connecting, deviceName))
         val adapter = bluetoothAdapter() ?: run {
             _state.value = ConnectionState.Failed(deviceName, macAddress, "No Bluetooth adapter")
+            updateNotification(getString(R.string.notif_state_failed))
             return
         }
         val device = adapter.getRemoteDevice(macAddress)
@@ -111,9 +121,10 @@ class BluetoothCarService : Service() {
             conn.start()
             connection = conn
             _state.value = ConnectionState.Connected(deviceName, macAddress)
-            startForeground(NOTIF_ID, buildNotification(deviceName))
+            updateNotification(getString(R.string.notif_text_connected, deviceName))
         } catch (e: Exception) {
             _state.value = ConnectionState.Failed(deviceName, macAddress, e.message ?: "connect failed")
+            updateNotification(getString(R.string.notif_state_failed))
             runCatching { socket?.close() }
             socket = null
         }

@@ -17,6 +17,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import com.hotwheels.command.bluetooth.BluetoothCarService
 import com.hotwheels.command.bluetooth.ConnectionState
 import com.hotwheels.command.data.LastDeviceStore
@@ -30,7 +31,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 
 class DriveActivity : ComponentActivity() {
 
-    private var service: BluetoothCarService? = null
+    // Compose-reactive: when the service binds, the UI recomposes and starts collecting service.state.
+    private var service: BluetoothCarService? by mutableStateOf(null)
     private var bound = false
     private val fallbackState = MutableStateFlow<ConnectionState>(ConnectionState.Idle)
 
