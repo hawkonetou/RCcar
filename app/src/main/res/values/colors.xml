@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bg_primary">#0A0E1A</color>
+    <color name="bg_surface">#10162B</color>
+    <color name="accent_electric">#00E5FF</color>
+    <color name="accent_glow">#0091FF</color>
+    <color name="state_connected">#00FF94</color>
+    <color name="state_connecting">#FFB800</color>
+    <color name="state_error">#FF2E5C</color>
+    <color name="text_primary">#E8F4FF</color>
+    <color name="text_muted">#5A7390</color>
+</resources>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">HotWheelsCommand</string>
+    <string name="notif_channel_name">HotWheels connection</string>
+    <string name="notif_title">HotWheelsCommand</string>
+    <string name="notif_text_connected">Connected to %1$s</string>
+    <string name="notif_action_stop_motor">CUT MOTOR</string>
+    <string name="notif_action_disconnect">DISCONNECT</string>
+</resources>
