@@ -164,12 +164,12 @@ L'event de relâchement Compose (`pointerInput` `up` ou `onDragEnd`) → `DriveV
 | Évènement Android | Action |
 |-------------------|--------|
 | `onCreate` | bind au service, démarrer auto-connect si MAC connu |
-| `onStart` | rien de spécifique (binding maintenu) |
+| `onStart` (premier passage après `onCreate`) | rien de spécifique (binding maintenu) |
 | `onResume` | UI prête, slider actif |
 | `onPause` (notification) | **on continue d'envoyer normalement** |
-| `onStop` (Home, switcher, lock) | `service.setTargetValue(0)` immédiat |
-| `onStart` (retour) | reprise immédiate (socket toujours ouvert) |
-| `onDestroy` (back depuis DriveScreen) | `stopService` → `0\n` final → `socket.close()` → notification disparaît |
+| `onStop` (Home, switcher, lock) | `service.setTargetValue(0)` immédiat ; socket maintenu vivant par le service |
+| `onStart` (retour dans l'app après onStop) | reprise immédiate (socket toujours ouvert), aucun re-pairing nécessaire |
+| `onDestroy` (back depuis DriveScreen, fin volontaire) | `stopService` → `0\n` final → `socket.close()` → notification disparaît |
 
 ---
 
@@ -548,7 +548,7 @@ Procédure dans `docs/test-procedure.md` :
 
 | Risque | Mitigation |
 |--------|------------|
-| `String.readStringUntil` côté firmware alloue dynamiquement à chaque message | Throttle/heartbeat limite à ~20 msg/s en pic, ~20 msg/s en heartbeat. Acceptable pour MVP. À surveiller. |
+| `String.readStringUntil` côté firmware alloue dynamiquement à chaque message | Throttle minimum 2 ms = pic théorique ≤ 500 msg/s ; en pratique le slider change rarement plus de ~50 fois/s, et le heartbeat ajoute 20 msg/s en idle. Charge typique réelle : ~50–70 msg/s. Acceptable pour MVP, à mesurer. |
 | `outputStream.write` bloquant si le buffer Bluetooth saturé | Mesuré pendant tests manuels ; si > 50 ms régulièrement, envisager un `flush()` plus fréquent ou un buffer dédié. |
 | Auto-connect peut prendre 1-3 s sur certains téléphones | UX : afficher l'écran de pilotage en mode `Connecting` pendant ce temps, ne pas bloquer sur un splash. |
 | Notification persistante peut être perçue comme intrusive | Silencieuse (channel `LOW`), avec actions utiles ("Couper le moteur"). |
