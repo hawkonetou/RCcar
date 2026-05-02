@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>HotWheels Command — Refonte DriveScreen</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Doto:wght@800;900&family=JetBrains+Mono:wght@300;400;600;800&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --cyan: #00E5FF;
+    --cyan-deep: #007a8a;
+    --magenta: #FF2DAA;
+    --warn: #FFB800;
+    --bg: #050709;
+    --bg-screen: #08090c;
+    --grid: rgba(0, 229, 255, 0.06);
+  }
+
+  * { font-family: 'JetBrains Mono', monospace; }
+  body {
+    background: var(--bg);
+    color: var(--cyan);
+    background-image:
+      radial-gradient(ellipse at top, rgba(0, 229, 255, 0.05), transparent 50%),
+      radial-gradient(ellipse at bottom, rgba(255, 45, 170, 0.025), transparent 60%);
+    background-attachment: fixed;
+  }
+  .doto { font-family: 'Doto', monospace; font-weight: 900; }
+
+  /* ====== PHONE FRAME ====== */
+  .phone-frame {
+    background: linear-gradient(135deg, #1a1a1f 0%, #0a0a0e 100%);
+    border-radius: 36px;
+    padding: 16px;
+    box-shadow:
+      0 30px 80px -20px rgba(0, 229, 255, 0.18),
+      0 60px 120px -40px rgba(255, 45, 170, 0.08),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+    position: relative;
+  }
+  .phone-frame::before {
+    content: '';
+    position: absolute;
+    top: 50%; left: 8px;
+    transform: translateY(-50%);
+    width: 6px; height: 60px;
+    background: #1a1a1f;
+    border-radius: 4px;
+    box-shadow: 0 -90px 0 #1a1a1f, 0 90px 0 #1a1a1f, inset 1px 0 0 rgba(255,255,255,0.05);
+  }
+  .phone-frame::after {
+    content: '';
+    position: absolute;
+    top: 50%; right: 8px;
+    transform: translateY(-50%);
+    width: 6px; height: 80px;
+    background: #1a1a1f;
+    border-radius: 4px;
+    box-shadow: inset -1px 0 0 rgba(255,255,255,0.05);
+  }
+  .phone-screen {
+    background: var(--bg-screen);
+    border-radius: 22px;
+    overflow: hidden;
+    position: relative;
+    width: 900px;
+    height: 416px;
+  }
+
+  /* notch (camera) */
+  .notch {
+    position: absolute;
+    top: 8px; left: 50%;
+    transform: translateX(-50%);
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #000;
+    box-shadow: inset 0 0 0 1.5px #2a2a2a, 0 0 4px rgba(0,229,255,0.1);
+    z-index: 5;
+  }
+
+  /* ====== BG ATMOSPHERE ====== */
+  .grid-bg {
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 28px 28px;
+    background-position: -1px -1px;
+  }
+  .scanlines {
+    position: absolute; inset: 0; pointer-events: none;
+    background: repeating-linear-gradient(0deg, transparent 0, transparent 2px, rgba(0,229,255,0.035) 2px, rgba(0,229,255,0.035) 3px);
+    animation: scan 9s linear infinite; z-index: 4;
+    mix-blend-mode: screen;
+  }
+  @keyframes scan { from { background-position-y: 0; } to { background-position-y: 120px; } }
+  .vignette { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,0.55) 100%); z-index: 3; }
+  .glow { box-shadow: 0 0 14px rgba(0,229,255,0.45); }
+  .glow-soft { text-shadow: 0 0 8px rgba(0, 229, 255, 0.55); }
+  .glow-strong { text-shadow: 0 0 14px rgba(0, 229, 255, 0.8), 0 0 32px rgba(0, 229, 255, 0.4); }
+  .glow-warn { color: var(--warn); text-shadow: 0 0 14px rgba(255, 184, 0, 0.6); }
+
+  /* ====== LED ====== */
+  .led-on {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--cyan);
+    box-shadow: 0 0 10px var(--cyan), 0 0 24px var(--cyan), inset 0 0 4px white;
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+  .led-pending {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--warn);
+    box-shadow: 0 0 10px var(--warn), 0 0 22px var(--warn);
+    animation: blink 0.6s ease-in-out infinite;
+  }
+  .led-off {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: #2c2c30; box-shadow: inset 0 0 4px #444;
+  }
+  @keyframes pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .55; transform: scale(0.92); } }
+  @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.2; } }
+
+  /* ====== BIG NUMBER ====== */
+  .big-num {
+    font-size: 10rem;
+    line-height: 0.85;
+    color: var(--cyan);
+    text-shadow:
+      0 0 22px rgba(0, 229, 255, 0.85),
+      0 0 48px rgba(0, 229, 255, 0.45),
+      -2px 0 0 rgba(255, 45, 170, 0.55),
+      2px 0 0 rgba(0, 229, 255, 0.55);
+    animation: numglow 2.6s ease-in-out infinite;
+  }
+  @keyframes numglow {
+    0%,100% { text-shadow: 0 0 22px rgba(0, 229, 255, 0.85), 0 0 48px rgba(0, 229, 255, 0.45), -2px 0 0 rgba(255, 45, 170, 0.55), 2px 0 0 rgba(0, 229, 255, 0.55); }
+    50%      { text-shadow: 0 0 28px rgba(0, 229, 255, 1), 0 0 60px rgba(0, 229, 255, 0.55), -2px 0 0 rgba(255, 45, 170, 0.5), 2px 0 0 rgba(0, 229, 255, 0.6); }
+  }
+
+  /* ====== CORNER BRACKETS (HUD focus) ====== */
+  .corner { position: absolute; width: 26px; height: 26px; border: 2px solid var(--cyan); opacity: 0.55; }
+  .corner.tl { top: 0; left: 0; border-right: 0; border-bottom: 0; }
+  .corner.tr { top: 0; right: 0; border-left: 0; border-bottom: 0; }
+  .corner.bl { bottom: 0; left: 0; border-right: 0; border-top: 0; }
+  .corner.br { bottom: 0; right: 0; border-left: 0; border-top: 0; }
+
+  /* ====== SLIDER ====== */
+  .slider-track {
+    width: 22px; height: 100%;
+    background: linear-gradient(180deg, rgba(0,229,255,0.10) 0%, rgba(0,229,255,0.04) 50%, rgba(255,45,170,0.10) 100%);
+    border: 1px solid rgba(0, 229, 255, 0.35);
+    border-radius: 12px;
+    position: relative;
+    box-shadow: inset 0 0 12px rgba(0,229,255,0.15);
+  }
+  .slider-fill-pos {
+    position: absolute; left: 1px; right: 1px;
+    background: linear-gradient(180deg, var(--cyan) 0%, var(--cyan-deep) 100%);
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 0 22px rgba(0, 229, 255, 0.7), inset 0 -2px 6px rgba(255,255,255,0.3);
+  }
+  .slider-marker {
+    position: absolute;
+    left: -10px; right: -10px;
+    height: 3px;
+    background: var(--cyan);
+    box-shadow: 0 0 14px var(--cyan), 0 0 28px var(--cyan);
+    border-radius: 2px;
+  }
+  .slider-marker::before {
+    content: '◀';
+    position: absolute; left: -16px; top: -7px; font-size: 12px;
+    color: var(--cyan); text-shadow: 0 0 6px var(--cyan);
+  }
+  .slider-marker::after {
+    content: '▶';
+    position: absolute; right: -16px; top: -7px; font-size: 12px;
+    color: var(--cyan); text-shadow: 0 0 6px var(--cyan);
+  }
+  .tick { position: absolute; left: -2px; right: -2px; height: 1px; background: rgba(0,229,255,0.3); }
+  .tick.major { left: -6px; right: -6px; height: 1px; background: rgba(0,229,255,0.55); }
+
+  /* ====== BATTERY BADGE ====== */
+  .battery-shell {
+    width: 78px; height: 28px;
+    border: 1.5px solid var(--cyan);
+    border-radius: 4px;
+    padding: 3px;
+    position: relative;
+    box-shadow: 0 0 10px rgba(0, 229, 255, 0.35), inset 0 0 8px rgba(0,229,255,0.1);
+  }
+  .battery-shell::after {
+    content: ''; position: absolute; right: -5px; top: 50%;
+    transform: translateY(-50%);
+    width: 4px; height: 12px; background: var(--cyan);
+    box-shadow: 0 0 6px var(--cyan);
+    border-radius: 0 2px 2px 0;
+  }
+  .battery-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #00E5FF 0%, #00FFB0 100%);
+    border-radius: 1px;
+    position: relative;
+    box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.4);
+    animation: batpulse 3.2s ease-in-out infinite;
+  }
+  .battery-fill::after {
+    content: ''; position: absolute; inset: 0;
+    background: repeating-linear-gradient(90deg, transparent 0 4px, rgba(0,0,0,0.18) 4px 5px);
+  }
+  .battery-low { background: linear-gradient(90deg, #FFB800 0%, #FF1744 100%) !important; animation: batpulse 1s ease-in-out infinite !important; }
+  @keyframes batpulse { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.25); } }
+
+  /* ====== DIRECTION TRIANGLES ====== */
+  .tri { width: 0; height: 0; border-style: solid; display: inline-block; }
+  .tri-fwd-on  { border-width: 7px 0 7px 12px; border-color: transparent transparent transparent var(--cyan); filter: drop-shadow(0 0 5px var(--cyan)); }
+  .tri-fwd-off { border-width: 7px 0 7px 12px; border-color: transparent transparent transparent rgba(0,229,255,0.15); }
+
+  /* ====== DIAG ICON ====== */
+  .diag-btn {
+    width: 26px; height: 26px;
+    border: 1px solid rgba(0, 229, 255, 0.35);
+    border-radius: 5px;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: rgba(0, 229, 255, 0.6); font-size: 0.75rem;
+    cursor: pointer; transition: all 0.25s;
+    background: rgba(0, 229, 255, 0.04);
+    backdrop-filter: blur(2px);
+  }
+  .diag-btn:hover {
+    border-color: var(--cyan); color: var(--cyan);
+    box-shadow: 0 0 12px rgba(0, 229, 255, 0.4);
+    background: rgba(0, 229, 255, 0.10);
+  }
+
+  /* ====== REVEAL STAGGER ====== */
+  .reveal { opacity: 0; transform: translateY(10px); animation: reveal 0.7s cubic-bezier(0.16, 0.84, 0.44, 1) forwards; }
+  @keyframes reveal { to { opacity: 1; transform: translateY(0); } }
+  .d1 { animation-delay: 0.05s; }
+  .d2 { animation-delay: 0.15s; }
+  .d3 { animation-delay: 0.25s; }
+  .d4 { animation-delay: 0.35s; }
+  .d5 { animation-delay: 0.45s; }
+  .d6 { animation-delay: 0.55s; }
+  .d7 { animation-delay: 0.65s; }
+
+  /* ====== TICKER ====== */
+  .ticker { font-size: 0.65rem; color: rgba(0, 229, 255, 0.45); letter-spacing: 0.05em; }
+
+  /* ====== CONNECTING SPINNER ====== */
+  .ring {
+    width: 90px; height: 90px;
+    border-radius: 50%;
+    border: 2px solid rgba(0, 229, 255, 0.15);
+    position: relative;
+  }
+  .ring::before, .ring::after {
+    content: ''; position: absolute; inset: -2px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+  }
+  .ring::before { border-top-color: var(--cyan); animation: spin 1.4s linear infinite; }
+  .ring::after  { border-top-color: var(--magenta); animation: spin 2.2s linear infinite reverse; opacity: 0.6; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ====== STATE LABEL CHIP ====== */
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px;
+    border: 1px solid rgba(0,229,255,0.4);
+    border-radius: 14px;
+    font-size: 0.65rem; letter-spacing: 0.2em;
+    background: rgba(0,229,255,0.05);
+  }
+
+  /* ====== HEADER ====== */
+  .page-h1 {
+    font-family: 'Doto', monospace; font-weight: 900;
+    font-size: 2.5rem; letter-spacing: 0.05em;
+    color: var(--cyan);
+    text-shadow: 0 0 20px rgba(0, 229, 255, 0.6), 0 0 40px rgba(0, 229, 255, 0.3);
+  }
+</style>
+</head>
+
+<body class="px-8 py-12">
+
+<header class="text-center mb-14">
+  <div class="text-[10px] tracking-[0.4em] text-[#00E5FF]/40 mb-3">▸ MOCKUP — REFONTE VISUELLE ◂</div>
+  <h1 class="page-h1">HOTWHEELS COMMAND</h1>
+  <div class="text-xs tracking-[0.3em] text-[#00E5FF]/30 mt-3">DRIVE SCREEN · v0.3.0-cyberpunk</div>
+  <div class="mt-3 inline-flex items-center gap-2 text-[10px] tracking-[0.4em]">
+    <span class="h-px w-8 bg-[#FF2DAA]/40"></span>
+    <span class="text-[#FF2DAA]/80 italic" style="text-shadow: 0 0 10px rgba(255,45,170,0.5);">concept by Tom LEBRETON</span>
+    <span class="h-px w-8 bg-[#FF2DAA]/40"></span>
+  </div>
+</header>
+
+<div class="space-y-16 max-w-[1100px] mx-auto">
+
+  <!-- =================================================================== -->
+  <!-- ÉTAT 01 — CONNECTING (juste après tap sur l'appareil)                -->
+  <!-- =================================================================== -->
+  <section class="flex flex-col items-center">
+    <div class="chip mb-5">
+      <span class="led-pending"></span>
+      <span>ÉTAT 01 · CONNEXION EN COURS</span>
+    </div>
+    <div class="phone-frame">
+      <div class="phone-screen grid-bg">
+        <div class="notch"></div>
+        <div class="absolute inset-0 p-4 flex flex-col">
+
+          <!-- Top bar -->
+          <div class="flex items-center justify-between text-xs reveal d1">
+            <div class="flex items-center gap-3">
+              <div class="led-pending"></div>
+              <span class="text-[#00E5FF] glow-soft tracking-wider">12:24:31</span>
+              <span class="text-[#00E5FF]/80 tracking-wider">HOTWHEELS_V1</span>
+              <span class="text-[#00E5FF]/40 tracking-wider">▸ 88:13:BF:68:F0:FE</span>
+              <span class="text-[#FF2DAA]/70 tracking-[0.25em] text-[10px] italic ml-1">concept by Tom LEBRETON</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="diag-btn" title="Journal diag">⌖</div>
+              <div class="flex items-center gap-2 opacity-50">
+                <div class="battery-shell"><div class="battery-fill" style="width:0;"></div></div>
+                <span class="text-[#00E5FF]/40 tracking-wider">--%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Center: connecting spinner with brackets -->
+          <div class="flex-1 flex items-center justify-center relative reveal d2">
+            <div class="absolute inset-x-0 top-1/2 -translate-y-1/2 mx-auto w-72 h-44">
+              <div class="corner tl"></div>
+              <div class="corner tr"></div>
+              <div class="corner bl"></div>
+              <div class="corner br"></div>
+            </div>
+            <div class="flex flex-col items-center gap-3">
+              <div class="ring flex items-center justify-center">
+                <span class="text-2xl glow-strong">◉</span>
+              </div>
+              <div class="text-sm tracking-[0.4em] glow-soft">ÉTABLISSEMENT DU LIEN</div>
+              <div class="text-[10px] tracking-[0.3em] text-[#00E5FF]/50">▸ SPP RFCOMM · UUID 00001101-… ◂</div>
+            </div>
+          </div>
+
+          <!-- Bottom strip -->
+          <div class="flex items-center justify-between text-[10px] reveal d4">
+            <span class="text-[#00E5FF]/50 tracking-widest">▣ MOTEUR · STAND BY</span>
+            <span class="ticker">RX 0.0kB/s · TX 0.1kB/s · LAT --</span>
+          </div>
+        </div>
+        <div class="scanlines"></div>
+        <div class="vignette"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =================================================================== -->
+  <!-- ÉTAT 02 — CONNECTED (value=42, batterie=68%)                         -->
+  <!-- =================================================================== -->
+  <section class="flex flex-col items-center">
+    <div class="chip mb-5">
+      <span class="led-on"></span>
+      <span>ÉTAT 02 · CONNECTÉ · v=+42 · BAT 68%</span>
+    </div>
+    <div class="phone-frame">
+      <div class="phone-screen grid-bg">
+        <div class="notch"></div>
+        <div class="absolute inset-0 p-4 flex flex-col">
+
+          <!-- Top bar -->
+          <div class="flex items-center justify-between text-xs reveal d1">
+            <div class="flex items-center gap-3">
+              <div class="led-on"></div>
+              <span class="text-[#00E5FF] glow-soft tracking-wider">12:24:47</span>
+              <span class="text-[#00E5FF] tracking-wider glow-soft">HOTWHEELS_V1</span>
+              <span class="text-[#00E5FF]/40 tracking-wider">▸ 88:13:BF:68:F0:FE</span>
+              <span class="text-[#FF2DAA]/70 tracking-[0.25em] text-[10px] italic ml-1">concept by Tom LEBRETON</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="diag-btn" title="Journal diag">⌖</div>
+              <div class="flex items-center gap-2">
+                <div class="battery-shell">
+                  <div class="battery-fill" style="width:68%"></div>
+                </div>
+                <div class="flex flex-col leading-tight">
+                  <span class="text-[#00E5FF] glow-soft tracking-wider text-[13px]">68%</span>
+                  <span class="text-[#00E5FF]/45 text-[9px] tracking-wider">3.82 V</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Main HUD: 3 columns -->
+          <div class="flex-1 grid grid-cols-[170px_1fr_120px] items-stretch gap-5 mt-2 mb-2">
+
+            <!-- LEFT — telemetry cards -->
+            <div class="flex flex-col gap-2 text-[10px] justify-center reveal d4">
+              <div class="border border-[#00E5FF]/35 px-3 py-2 bg-[#00E5FF]/[0.025]">
+                <div class="text-[#00E5FF]/55 tracking-[0.2em] mb-1.5">DIRECTION</div>
+                <div class="flex gap-1 mb-1.5">
+                  <span class="tri tri-fwd-on"></span>
+                  <span class="tri tri-fwd-on"></span>
+                  <span class="tri tri-fwd-on"></span>
+                  <span class="tri tri-fwd-on"></span>
+                  <span class="tri tri-fwd-off"></span>
+                </div>
+                <div class="text-[#00E5FF] glow-soft tracking-[0.15em]">▶ AVANT</div>
+              </div>
+              <div class="border border-[#00E5FF]/25 px-3 py-2 bg-[#00E5FF]/[0.015]">
+                <div class="text-[#00E5FF]/55 tracking-[0.2em] mb-1">PWM SORTIE</div>
+                <div class="flex items-end gap-1">
+                  <span class="text-[#00E5FF] glow-soft text-base doto">107</span>
+                  <span class="text-[#00E5FF]/35 mb-0.5">/ 255</span>
+                </div>
+              </div>
+              <div class="border border-[#00E5FF]/25 px-3 py-2 bg-[#00E5FF]/[0.015]">
+                <div class="text-[#00E5FF]/55 tracking-[0.2em] mb-1">UPTIME</div>
+                <div class="text-[#00E5FF] glow-soft tracking-wider">00:03:42</div>
+              </div>
+            </div>
+
+            <!-- CENTER — big number with brackets -->
+            <div class="relative flex items-center justify-center reveal d3">
+              <div class="absolute inset-0 mx-8 my-6">
+                <div class="corner tl"></div>
+                <div class="corner tr"></div>
+                <div class="corner bl"></div>
+                <div class="corner br"></div>
+              </div>
+              <div class="text-center">
+                <div class="text-[10px] tracking-[0.4em] text-[#00E5FF]/55 mb-1">▸ THROTTLE % ◂</div>
+                <div class="doto big-num">42</div>
+                <div class="text-[10px] tracking-[0.35em] text-[#00E5FF]/65 mt-1">▸ ENVOI : -42 ◂</div>
+              </div>
+            </div>
+
+            <!-- RIGHT — vertical slider -->
+            <div class="flex flex-col items-center gap-1 py-2 reveal d5">
+              <div class="text-[9px] tracking-[0.35em] text-[#00E5FF]/55">PUSH</div>
+              <div class="flex-1 flex items-center gap-2 my-1">
+                <!-- graduations -->
+                <div class="flex flex-col justify-between h-full text-[8px] text-[#00E5FF]/50 tracking-[0.1em] leading-none">
+                  <span>+100</span>
+                  <span>+050</span>
+                  <span class="text-[#00E5FF] glow-soft">+000</span>
+                  <span>-050</span>
+                  <span>-100</span>
+                </div>
+                <!-- track -->
+                <div class="slider-track relative">
+                  <!-- center line -->
+                  <div class="absolute left-0 right-0 top-1/2 h-px bg-[#00E5FF]/55"></div>
+                  <!-- fill (positive 42% above center) -->
+                  <div class="slider-fill-pos" style="height: 21%; bottom: 50%;"></div>
+                  <!-- marker at 71% from bottom -->
+                  <div class="slider-marker" style="bottom: 71%;"></div>
+                  <!-- ticks -->
+                  <div class="tick major" style="top: 0%;"></div>
+                  <div class="tick" style="top: 10%;"></div>
+                  <div class="tick" style="top: 20%;"></div>
+                  <div class="tick" style="top: 30%;"></div>
+                  <div class="tick" style="top: 40%;"></div>
+                  <div class="tick" style="top: 60%;"></div>
+                  <div class="tick" style="top: 70%;"></div>
+                  <div class="tick" style="top: 80%;"></div>
+                  <div class="tick" style="top: 90%;"></div>
+                  <div class="tick major" style="top: 100%;"></div>
+                </div>
+              </div>
+              <div class="text-[9px] tracking-[0.35em] text-[#00E5FF]/55">PULL</div>
+            </div>
+
+          </div>
+
+          <!-- Bottom telemetry strip -->
+          <div class="flex items-center justify-between text-[10px] reveal d6">
+            <div class="flex items-center gap-4">
+              <span class="text-[#00E5FF]/65 tracking-[0.2em]">▣ MOTEUR</span>
+              <span class="text-[#00E5FF] glow-soft tracking-[0.2em]">ACTIF</span>
+              <span class="text-[#00E5FF]/30">|</span>
+              <span class="ticker">RX 1.2kB/s · TX 0.4kB/s · LAT 12ms · HEARTBEAT 50ms</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="text-[#00E5FF]/40 tracking-[0.2em]">▶ PILOTAGE</span>
+              <span class="text-[#00E5FF]/40">v0.3.0</span>
+            </div>
+          </div>
+
+        </div>
+        <div class="scanlines"></div>
+        <div class="vignette"></div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- =================================================================== -->
+<!-- LEGEND                                                                -->
+<!-- =================================================================== -->
+<section class="mt-20 max-w-[1100px] mx-auto">
+  <div class="border border-[#00E5FF]/20 p-7 bg-[#08090c]/60">
+    <div class="flex items-center gap-3 mb-5">
+      <div class="text-[10px] tracking-[0.4em] text-[#00E5FF]/55">▸ PRINCIPES DE LA REFONTE</div>
+      <div class="flex-1 h-px bg-[#00E5FF]/15"></div>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-5 text-xs leading-relaxed">
+
+      <div class="border-l-2 border-[#00E5FF]/40 pl-3">
+        <div class="text-[#00E5FF] glow-soft tracking-[0.2em] mb-1.5 text-[11px]">CHIFFRE CENTRAL</div>
+        <div class="text-[#00E5FF]/65">Police <em>Doto</em> 900 weight, taille XXL. Glow cyan animé (2.6s) + aberration chromatique cyan/magenta. Crosshair brackets de cadrage HUD.</div>
+      </div>
+
+      <div class="border-l-2 border-[#00E5FF]/40 pl-3">
+        <div class="text-[#00E5FF] glow-soft tracking-[0.2em] mb-1.5 text-[11px]">BADGE BATTERIE</div>
+        <div class="text-[#00E5FF]/65">Cellule stylisée + remplissage dégradé cyan→vert qui pulse 3.2s, hachures internes pour effet écran segmenté. Tension brute sous le %. Switch dégradé orange/rouge sous 20%.</div>
+      </div>
+
+      <div class="border-l-2 border-[#00E5FF]/40 pl-3">
+        <div class="text-[#00E5FF] glow-soft tracking-[0.2em] mb-1.5 text-[11px]">ICÔNE DIAG ⌖</div>
+        <div class="text-[#00E5FF]/65">Bouton 26×26 px, glyphe target/réticule, opacité 60% au repos. Hover/tap → glow + outline net. Ouvre une bottom sheet plein-écran avec le journal diag.</div>
+      </div>
+
+      <div class="border-l-2 border-[#00E5FF]/40 pl-3">
+        <div class="text-[#00E5FF] glow-soft tracking-[0.2em] mb-1.5 text-[11px]">SLIDER GRADUÉ</div>
+        <div class="text-[#00E5FF]/65">Track vertical avec dégradé bicolore (cyan haut → magenta bas), graduations 10%, ticks majeurs aux extrémités, marqueur central 0 mis en valeur, fill avec glow + bevel.</div>
+      </div>
+
+      <div class="border-l-2 border-[#00E5FF]/40 pl-3">
+        <div class="text-[#00E5FF] glow-soft tracking-[0.2em] mb-1.5 text-[11px]">TÉLÉMÉTRIE LATÉRALE</div>
+        <div class="text-[#00E5FF]/65">3 cards à gauche : DIRECTION (LEDs triangulaires AV/AR), PWM brut /255, UPTIME. Renforce la sensation de console embarquée plutôt que d'app jouet.</div>
+      </div>
+
+      <div class="border-l-2 border-[#00E5FF]/40 pl-3">
+        <div class="text-[#00E5FF] glow-soft tracking-[0.2em] mb-1.5 text-[11px]">CONNEXION EN COURS</div>
+        <div class="text-[#00E5FF]/65">Anneau double rotation contrarotative cyan + magenta, brackets de cadrage, mention SPP RFCOMM/UUID en sous-texte. Plus une transition qu'un état figé.</div>
+      </div>
+
+      <div class="border-l-2 border-[#00E5FF]/40 pl-3">
+        <div class="text-[#00E5FF] glow-soft tracking-[0.2em] mb-1.5 text-[11px]">ATMOSPHÈRE</div>
+        <div class="text-[#00E5FF]/65">Grille blueprint cyan 28px + scanlines CRT animées (9s loop) + vignette + 2 radial-gradients diffus (cyan haut + magenta bas) pour la profondeur.</div>
+      </div>
+
+      <div class="border-l-2 border-[#00E5FF]/40 pl-3">
+        <div class="text-[#00E5FF] glow-soft tracking-[0.2em] mb-1.5 text-[11px]">TYPOGRAPHIE</div>
+        <div class="text-[#00E5FF]/65"><em>Doto</em> 900 (chiffres / titres) — pixel grid moderne, signature visuelle. <em>JetBrains Mono</em> 300/400/600 (corps, télémétrie). Pas de Inter/Roboto.</div>
+      </div>
+
+      <div class="border-l-2 border-[#00E5FF]/40 pl-3">
+        <div class="text-[#00E5FF] glow-soft tracking-[0.2em] mb-1.5 text-[11px]">ANIMATIONS</div>
+        <div class="text-[#00E5FF]/65">LED pulse 1.6s · battery pulse 3.2s · scanlines 9s · numglow 2.6s · ring spin 1.4s/2.2s · reveal staggered au boot (7 paliers 0.05-0.65s).</div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="mt-10 text-center">
+    <div class="text-[10px] tracking-[0.3em] text-[#00E5FF]/40">▸ PROCHAINE ÉTAPE</div>
+    <div class="text-[#00E5FF]/70 mt-2 text-sm">Port en Jetpack Compose : couleurs (Color.kt), composants (BatteryBadge, Slider redéfini, ConnectingScreen, telemetry cards), transitions (rememberInfiniteTransition pour les pulses, AnimatedVisibility pour reveal).</div>
+  </div>
+  <div class="mt-12 flex items-center justify-center gap-3 text-[10px] tracking-[0.4em]">
+    <span class="h-px w-12 bg-[#FF2DAA]/30"></span>
+    <span class="text-[#FF2DAA]/70 italic" style="text-shadow: 0 0 8px rgba(255,45,170,0.4);">concept by Tom LEBRETON</span>
+    <span class="h-px w-12 bg-[#FF2DAA]/30"></span>
+  </div>
+</section>
+
+</body>
+</html>

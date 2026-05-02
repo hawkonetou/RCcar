@@ -16,28 +16,37 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.hotwheels.command.ui.components.DiagButton
+import com.hotwheels.command.ui.components.DiagSheet
 import com.hotwheels.command.ui.components.ScanlineBackground
 import com.hotwheels.command.ui.theme.AccentElectric
+import com.hotwheels.command.ui.theme.AccentMagenta
 import com.hotwheels.command.ui.theme.BgPrimary
 import com.hotwheels.command.ui.theme.BgSurface
+import com.hotwheels.command.ui.theme.CyanDim35
+import com.hotwheels.command.ui.theme.CyanDim50
+import com.hotwheels.command.ui.theme.MonoFamily
 import com.hotwheels.command.ui.theme.TextMuted
 import com.hotwheels.command.ui.theme.TextPrimary
-import com.hotwheels.command.util.DiagLog
 
 @Composable
 fun DeviceSelectionScreen(
@@ -46,23 +55,42 @@ fun DeviceSelectionScreen(
     onDeviceSelected: (PairedDevice) -> Unit
 ) {
     val devices by viewModel.devices.collectAsStateWithLifecycle()
-    val diagEntries by DiagLog.entries.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    var diagOpen by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) { viewModel.refresh() }
-
-    val diagListState = rememberLazyListState()
-    LaunchedEffect(diagEntries.size) {
-        if (diagEntries.isNotEmpty()) {
-            diagListState.scrollToItem(diagEntries.size - 1)
-        }
-    }
 
     Box(modifier = Modifier.fillMaxSize().background(BgPrimary)) {
         ScanlineBackground()
         Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-            Text(text = "> APPAREILS APPAIRÉS", color = AccentElectric)
-            Spacer(Modifier.height(8.dp))
+
+            // Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = "▸ APPAREILS APPAIRÉS",
+                        color = AccentElectric,
+                        fontFamily = MonoFamily,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 2.sp
+                    )
+                    Text(
+                        text = "concept by Tom LEBRETON",
+                        color = AccentMagenta.copy(alpha = 0.7f),
+                        fontFamily = MonoFamily,
+                        fontStyle = FontStyle.Italic,
+                        fontSize = 9.sp,
+                        letterSpacing = 1.5.sp
+                    )
+                }
+                DiagButton(onClick = { diagOpen = true })
+            }
+            Spacer(Modifier.height(12.dp))
 
             if (lastError != null) {
                 Box(
@@ -73,10 +101,10 @@ fun DeviceSelectionScreen(
                         .padding(8.dp)
                 ) {
                     Text(
-                        text = "> ÉCHEC: $lastError",
+                        text = "▸ ÉCHEC : $lastError",
                         color = Color(0xFFFF8A95),
-                        fontFamily = FontFamily.Monospace,
-                        fontSize = 12.sp
+                        fontFamily = MonoFamily,
+                        fontSize = 11.sp
                     )
                 }
                 Spacer(Modifier.height(8.dp))
@@ -87,43 +115,35 @@ fun DeviceSelectionScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .border(1.dp, CyanDim35)
                             .background(BgSurface)
                             .clickable { onDeviceSelected(device) }
-                            .padding(12.dp)
+                            .padding(14.dp)
                     ) {
                         Column {
-                            Text(text = device.name, color = TextPrimary)
-                            Text(text = "▸ ${device.address}", color = TextMuted, fontSize = 11.sp)
+                            Text(
+                                text = device.name,
+                                color = TextPrimary,
+                                fontFamily = MonoFamily,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 14.sp,
+                                letterSpacing = 1.sp
+                            )
+                            Spacer(Modifier.height(2.dp))
+                            Text(
+                                text = "▸ ${device.address}",
+                                color = CyanDim50,
+                                fontFamily = MonoFamily,
+                                fontSize = 10.sp,
+                                letterSpacing = 1.sp
+                            )
                         }
                     }
-                    Spacer(Modifier.height(4.dp))
+                    Spacer(Modifier.height(6.dp))
                 }
             }
 
-            Spacer(Modifier.height(8.dp))
-            Text(text = "> JOURNAL DIAG (${diagEntries.size})", color = AccentElectric)
-            Spacer(Modifier.height(4.dp))
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .background(Color(0xFF0A0A0A))
-                    .border(1.dp, AccentElectric)
-                    .padding(4.dp)
-            ) {
-                LazyColumn(state = diagListState, modifier = Modifier.fillMaxSize()) {
-                    items(diagEntries) { entry ->
-                        Text(
-                            text = entry,
-                            color = TextPrimary,
-                            fontFamily = FontFamily.Monospace,
-                            fontSize = 9.sp
-                        )
-                    }
-                }
-            }
-
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(12.dp))
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -131,16 +151,16 @@ fun DeviceSelectionScreen(
                 Button(
                     onClick = { viewModel.refresh() },
                     colors = ButtonDefaults.buttonColors(containerColor = BgSurface, contentColor = AccentElectric)
-                ) { Text("ACTUALISER", fontSize = 11.sp) }
+                ) { Text("ACTUALISER", fontSize = 10.sp, fontFamily = MonoFamily, letterSpacing = 2.sp) }
                 Button(
                     onClick = { context.startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS)) },
                     colors = ButtonDefaults.buttonColors(containerColor = BgSurface, contentColor = AccentElectric)
-                ) { Text("RÉGLAGES BT", fontSize = 11.sp) }
-                Button(
-                    onClick = { DiagLog.clear() },
-                    colors = ButtonDefaults.buttonColors(containerColor = BgSurface, contentColor = AccentElectric)
-                ) { Text("EFFACER LOG", fontSize = 11.sp) }
+                ) { Text("RÉGLAGES BT", fontSize = 10.sp, fontFamily = MonoFamily, letterSpacing = 2.sp) }
             }
+        }
+
+        if (diagOpen) {
+            DiagSheet(onDismiss = { diagOpen = false })
         }
     }
 }
