@@ -56,9 +56,15 @@ class DriveActivity : ComponentActivity() {
         }
     }
 
-    private val requestPermission =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-            if (granted) bindToService()
+    private val requestPermissions =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
+            val granted = result.all { it.value }
+            DiagLog.log("ACT", "permissions result: ${result.entries.joinToString { "${it.key.substringAfterLast('.')}=${it.value}" }}")
+            if (granted) {
+                bindToService()
+            } else {
+                DiagLog.log("ACT", "permissions denied — service not bound")
+            }
         }
 
     private val requestEnableBt =
@@ -69,11 +75,11 @@ class DriveActivity : ComponentActivity() {
         DiagLog.log("ACT", "onCreate")
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-        val hasPerm = PermissionUtils.hasBluetoothConnect(this)
-        DiagLog.log("ACT", "hasBluetoothConnect=$hasPerm")
-        if (!hasPerm) {
-            DiagLog.log("ACT", "requesting BLUETOOTH_CONNECT")
-            requestPermission.launch(PermissionUtils.BT_CONNECT)
+        val missing = PermissionUtils.missing(this)
+        DiagLog.log("ACT", "permissions missing=${missing.map { it.substringAfterLast('.') }}")
+        if (missing.isNotEmpty()) {
+            DiagLog.log("ACT", "requesting permissions")
+            requestPermissions.launch(PermissionUtils.required)
         } else {
             bindToService()
         }
