@@ -118,6 +118,10 @@ class BluetoothCarService : Service() {
         connection?.setSteeringValue(value)
     }
 
+    fun setBatteryBypass(enabled: Boolean) {
+        connection?.setBatteryBypass(enabled)
+    }
+
     fun connect(deviceName: String, macAddress: String) {
         DiagLog.log("SVC", "connect() called name='$deviceName' mac=$macAddress")
         connectJob?.cancel()

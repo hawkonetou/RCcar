@@ -16,7 +16,9 @@ data class BatteryState(
     val percent: Int,
     val rawAdc: Int? = null,
     val pinMv: Int? = null,
-    val vbatMv: Int? = null
+    val vbatMv: Int? = null,
+    val tempC: Int? = null,
+    val sagPenalty: Int? = null
 ) {
     val volts: Float get() = centivolts / 100f
 

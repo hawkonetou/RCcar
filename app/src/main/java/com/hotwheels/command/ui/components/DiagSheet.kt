@@ -37,8 +37,22 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.IntSize
+import com.hotwheels.command.data.SessionStatsStore
 import com.hotwheels.command.data.SteeringEnabledStore
 import com.hotwheels.command.data.ThrottleLimitStore
+import com.hotwheels.command.data.TuningStore
+import com.hotwheels.command.data.VbatHistory
 import com.hotwheels.command.ui.theme.LocalPalette
 import com.hotwheels.command.ui.theme.MonoFamily
 import com.hotwheels.command.util.DiagLog
@@ -57,6 +71,15 @@ fun DiagSheet(onDismiss: () -> Unit, battery: com.hotwheels.command.bluetooth.Ba
     val entries by DiagLog.entries.collectAsStateWithLifecycle()
     val throttleLimit by ThrottleLimitStore.limit.collectAsStateWithLifecycle()
     val steeringEnabled by SteeringEnabledStore.enabled.collectAsStateWithLifecycle()
+    val trimSteering by TuningStore.trimSteering.collectAsStateWithLifecycle()
+    val expoThrottle by TuningStore.expoThrottle.collectAsStateWithLifecycle()
+    val expoSteering by TuningStore.expoSteering.collectAsStateWithLifecycle()
+    val invertThrottle by TuningStore.invertThrottle.collectAsStateWithLifecycle()
+    val invertSteering by TuningStore.invertSteering.collectAsStateWithLifecycle()
+    val brakeOnRelease by TuningStore.brakeOnRelease.collectAsStateWithLifecycle()
+    val motorTimeMs by SessionStatsStore.motorTimeMs.collectAsStateWithLifecycle()
+    val distanceArb by SessionStatsStore.distanceArb.collectAsStateWithLifecycle()
+    val vbatSamples by VbatHistory.samples.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
     LaunchedEffect(entries.size) {
         if (entries.isNotEmpty()) listState.scrollToItem(entries.size - 1)
@@ -69,7 +92,12 @@ fun DiagSheet(onDismiss: () -> Unit, battery: com.hotwheels.command.bluetooth.Ba
         contentColor = palette.accent,
         dragHandle = null
     ) {
-        Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState())
+        ) {
             // ------- Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -187,10 +215,67 @@ fun DiagSheet(onDismiss: () -> Unit, battery: com.hotwheels.command.bluetooth.Ba
 
             Spacer(Modifier.height(10.dp))
 
-            // ------- Journal
+            // ------- Mini graph Vbat 60s
+            VbatSparkline(samples = vbatSamples)
+
+            Spacer(Modifier.height(10.dp))
+
+            // ------- Stats de session
+            SessionStatsPanel(
+                motorTimeMs = motorTimeMs,
+                distanceArb = distanceArb,
+                onReset = { SessionStatsStore.reset(context) }
+            )
+
+            Spacer(Modifier.height(10.dp))
+
+            // ------- Tuning : trim direction
+            TrimSlider(
+                label = "▸ TRIM DIRECTION",
+                value = trimSteering,
+                min = -20,
+                max = 20,
+                onChange = { TuningStore.setTrimSteering(context, it) },
+                hint = "decalage permanent applique au M2 (-20..+20)"
+            )
+
+            Spacer(Modifier.height(8.dp))
+
+            // ------- Tuning : expo throttle / steering
+            TrimSlider(
+                label = "▸ EXPO THROTTLE",
+                value = expoThrottle,
+                min = 0,
+                max = 100,
+                onChange = { TuningStore.setExpoThrottle(context, it) },
+                hint = "0 = lineaire, 100 = expo pur (plus de finesse a basse vitesse)"
+            )
+
+            Spacer(Modifier.height(8.dp))
+
+            TrimSlider(
+                label = "▸ EXPO DIRECTION",
+                value = expoSteering,
+                min = 0,
+                max = 100,
+                onChange = { TuningStore.setExpoSteering(context, it) },
+                hint = "0 = lineaire, 100 = expo pur"
+            )
+
+            Spacer(Modifier.height(10.dp))
+
+            // ------- Toggles : inversion + brake on release
+            ToggleRow("INV THROTTLE", invertThrottle) { TuningStore.setInvertThrottle(context, it) }
+            ToggleRow("INV DIRECTION", invertSteering) { TuningStore.setInvertSteering(context, it) }
+            ToggleRow("FREIN AU RELÂCHÉ", brakeOnRelease) { TuningStore.setBrakeOnRelease(context, it) }
+
+            Spacer(Modifier.height(10.dp))
+
+            // ------- Journal (hauteur fixe car embedded dans un scroll vertical)
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
+                    .fillMaxWidth()
+                    .height(220.dp)
                     .border(1.dp, palette.accentDim35)
                     .background(palette.surface)
                     .padding(8.dp)
@@ -207,6 +292,8 @@ fun DiagSheet(onDismiss: () -> Unit, battery: com.hotwheels.command.bluetooth.Ba
                     }
                 }
             }
+
+            Spacer(Modifier.height(20.dp))
         }
     }
 }
@@ -319,6 +406,255 @@ private fun DiagKv(
                 fontSize = 9.sp
             )
         }
+    }
+}
+
+@Composable
+private fun TrimSlider(
+    label: String,
+    value: Int,
+    min: Int,
+    max: Int,
+    onChange: (Int) -> Unit,
+    hint: String? = null
+) {
+    val palette = LocalPalette.current
+    var widthPx by remember { mutableStateOf(1f) }
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = label,
+                color = palette.textMuted,
+                fontFamily = MonoFamily,
+                fontSize = 12.sp,
+                letterSpacing = 2.sp,
+                fontWeight = FontWeight.Medium
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Box(modifier = Modifier
+                    .border(1.dp, palette.accentDim35)
+                    .background(palette.surface)
+                    .clickable { onChange((value - 1).coerceAtLeast(min)) }
+                    .padding(horizontal = 10.dp, vertical = 4.dp)
+                ) { Text("−", color = palette.accent, fontFamily = MonoFamily, fontSize = 14.sp, fontWeight = FontWeight.Bold) }
+                Text(
+                    text = value.toString(),
+                    color = palette.accent,
+                    fontFamily = MonoFamily,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 14.sp,
+                    letterSpacing = 1.sp
+                )
+                Box(modifier = Modifier
+                    .border(1.dp, palette.accentDim35)
+                    .background(palette.surface)
+                    .clickable { onChange((value + 1).coerceAtMost(max)) }
+                    .padding(horizontal = 10.dp, vertical = 4.dp)
+                ) { Text("+", color = palette.accent, fontFamily = MonoFamily, fontSize = 14.sp, fontWeight = FontWeight.Bold) }
+                Box(modifier = Modifier
+                    .border(1.dp, palette.accentDim35)
+                    .background(palette.surface)
+                    .clickable {
+                        val mid = if (min < 0) 0 else min
+                        onChange(mid)
+                    }
+                    .padding(horizontal = 10.dp, vertical = 4.dp)
+                ) { Text("0", color = palette.textMuted, fontFamily = MonoFamily, fontSize = 12.sp) }
+            }
+        }
+        Spacer(Modifier.height(4.dp))
+        Canvas(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(20.dp)
+                .border(1.dp, palette.accentDim35)
+                .background(palette.surface)
+                .pointerInput(min, max) {
+                    detectDragGestures(
+                        onDrag = { change, _ ->
+                            val ratio = (change.position.x / widthPx).coerceIn(0f, 1f)
+                            val v = (min + ratio * (max - min)).toInt()
+                            onChange(v)
+                            change.consume()
+                        }
+                    )
+                }
+        ) {
+            widthPx = size.width
+            val ratio = (value - min).toFloat() / (max - min).toFloat()
+            // graduations milieu
+            val midX = if (min < 0) (-min).toFloat() / (max - min).toFloat() * size.width else size.width / 2f
+            drawLine(palette.accentDim50, Offset(midX, 0f), Offset(midX, size.height), 1f)
+            // curseur
+            val x = ratio * size.width
+            drawLine(palette.accent, Offset(x, 0f), Offset(x, size.height), 3f)
+        }
+        if (hint != null) {
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text = hint,
+                color = palette.textSubtle,
+                fontFamily = MonoFamily,
+                fontSize = 10.sp,
+                letterSpacing = 0.5.sp
+            )
+        }
+    }
+}
+
+@Composable
+private fun ToggleRow(label: String, value: Boolean, onChange: (Boolean) -> Unit) {
+    val palette = LocalPalette.current
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = "▸ $label",
+            color = palette.textMuted,
+            fontFamily = MonoFamily,
+            fontSize = 12.sp,
+            letterSpacing = 2.sp
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            listOf(false to "OFF", true to "ON").forEach { (v, t) ->
+                val active = v == value
+                Box(
+                    modifier = Modifier
+                        .border(if (active) 2.dp else 1.dp, if (active) palette.accent else palette.accentDim35)
+                        .background(if (active) palette.panel else palette.surface)
+                        .clickable { onChange(v) }
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                ) {
+                    Text(
+                        text = t,
+                        color = if (active) palette.accent else palette.textMuted,
+                        fontFamily = MonoFamily,
+                        fontSize = 12.sp,
+                        fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal,
+                        letterSpacing = 1.5.sp
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun VbatSparkline(samples: List<Int>) {
+    val palette = LocalPalette.current
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, palette.accentDim35)
+            .background(palette.surface)
+            .padding(10.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = "▸ VBAT 60S",
+                color = palette.textMuted,
+                fontFamily = MonoFamily,
+                fontSize = 12.sp,
+                letterSpacing = 2.sp,
+                fontWeight = FontWeight.Medium
+            )
+            if (samples.isNotEmpty()) {
+                val min = samples.min()
+                val max = samples.max()
+                Text(
+                    text = "min %.2f / max %.2f V".format(min / 100f, max / 100f),
+                    color = palette.textSubtle,
+                    fontFamily = MonoFamily,
+                    fontSize = 10.sp,
+                    letterSpacing = 0.5.sp
+                )
+            }
+        }
+        Spacer(Modifier.height(6.dp))
+        Canvas(modifier = Modifier.fillMaxWidth().height(60.dp)) {
+            if (samples.size < 2) return@Canvas
+            // Echelle Y : 280 (Li-ion vide) -> 425 (full+marge)
+            val yMin = 280
+            val yMax = 425
+            val w = size.width
+            val h = size.height
+            val step = w / (VbatHistory.CAPACITY - 1)
+            // ligne de seuil 20% (vbat ~= 320)
+            val warnY = h * (1f - (320 - yMin).toFloat() / (yMax - yMin).toFloat())
+            drawLine(palette.stateError.copy(alpha = 0.4f), Offset(0f, warnY), Offset(w, warnY), 1f)
+            // courbe
+            for (i in 1 until samples.size) {
+                val cv1 = samples[i - 1].coerceIn(yMin, yMax)
+                val cv2 = samples[i].coerceIn(yMin, yMax)
+                val y1 = h * (1f - (cv1 - yMin).toFloat() / (yMax - yMin).toFloat())
+                val y2 = h * (1f - (cv2 - yMin).toFloat() / (yMax - yMin).toFloat())
+                val x1 = (VbatHistory.CAPACITY - samples.size + i - 1) * step
+                val x2 = (VbatHistory.CAPACITY - samples.size + i) * step
+                drawLine(palette.accent, Offset(x1, y1), Offset(x2, y2), 2f)
+            }
+        }
+        @Suppress("UNUSED_EXPRESSION") IntSize.Zero
+    }
+}
+
+@Composable
+private fun SessionStatsPanel(motorTimeMs: Long, distanceArb: Long, onReset: () -> Unit) {
+    val palette = LocalPalette.current
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, palette.accentDim35)
+            .background(palette.surface)
+            .padding(10.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "▸ STATS CUMUL",
+                color = palette.textMuted,
+                fontFamily = MonoFamily,
+                fontSize = 12.sp,
+                letterSpacing = 2.sp,
+                fontWeight = FontWeight.Medium
+            )
+            Box(
+                modifier = Modifier
+                    .border(1.dp, palette.accentDim35)
+                    .clickable { onReset() }
+                    .padding(horizontal = 10.dp, vertical = 4.dp)
+            ) {
+                Text("RESET", color = palette.accent, fontFamily = MonoFamily, fontSize = 11.sp, letterSpacing = 1.5.sp)
+            }
+        }
+        Spacer(Modifier.height(6.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+            DiagKv("MOTEUR", formatDuration(motorTimeMs), hint = "temps moteur cumule")
+            DiagKv("DISTANCE", "$distanceArb u", hint = "integrale |throttle|·dt")
+        }
+    }
+}
+
+private fun formatDuration(ms: Long): String {
+    val s = ms / 1000
+    val h = s / 3600
+    val m = (s % 3600) / 60
+    val sec = s % 60
+    return when {
+        h > 0 -> "%dh %02dm %02ds".format(h, m, sec)
+        m > 0 -> "%dm %02ds".format(m, sec)
+        else -> "%ds".format(sec)
     }
 }
 

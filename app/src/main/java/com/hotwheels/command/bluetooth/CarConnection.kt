@@ -49,6 +49,14 @@ class CarConnection(
         steering.set(clamped)
     }
 
+    /** Envoie BYPASS_BAT:1/0 au firmware. Peut etre appele depuis n'importe quel thread. */
+    fun setBatteryBypass(enabled: Boolean) {
+        runCatching {
+            outputStream.write("BYPASS_BAT:${if (enabled) 1 else 0}\n".toByteArray(Charsets.US_ASCII))
+            outputStream.flush()
+        }
+    }
+
     fun start() {
         if (running) return
         running = true
@@ -127,22 +135,27 @@ class CarConnection(
         when {
             trimmed.startsWith("BAT:") -> {
                 // Formats acceptes :
-                //   BAT:cv,pct                       (firmware v0.3 — legacy)
-                //   BAT:cv,pct,raw,pinMv,vbatMv      (firmware v0.4+ — diagnostic enrichi)
+                //   BAT:cv,pct                            (firmware v0.3)
+                //   BAT:cv,pct,raw,pinMv,vbatMv           (firmware v0.4)
+                //   BAT:cv,pct,raw,pinMv,vbatMv,tempC,sag (firmware v0.6+)
                 val payload = trimmed.substring(4)
                 val parts = payload.split(",")
-                if (parts.size != 2 && parts.size != 5) return
+                if (parts.size !in listOf(2, 5, 7)) return
                 val cv = parts[0].trim().toIntOrNull() ?: return
                 val pct = parts[1].trim().toIntOrNull() ?: return
-                val raw = if (parts.size == 5) parts[2].trim().toIntOrNull() else null
-                val pinMv = if (parts.size == 5) parts[3].trim().toIntOrNull() else null
-                val vbatMv = if (parts.size == 5) parts[4].trim().toIntOrNull() else null
+                val raw = parts.getOrNull(2)?.trim()?.toIntOrNull()
+                val pinMv = parts.getOrNull(3)?.trim()?.toIntOrNull()
+                val vbatMv = parts.getOrNull(4)?.trim()?.toIntOrNull()
+                val tempC = parts.getOrNull(5)?.trim()?.toIntOrNull()
+                val sag = parts.getOrNull(6)?.trim()?.toIntOrNull()
                 _battery.value = BatteryState(
                     centivolts = cv,
                     percent = pct.coerceIn(0, 100),
                     rawAdc = raw,
                     pinMv = pinMv,
-                    vbatMv = vbatMv
+                    vbatMv = vbatMv,
+                    tempC = tempC,
+                    sagPenalty = sag
                 )
             }
             trimmed == "PONG" -> { /* freshness deja mise a jour ci-dessus */ }

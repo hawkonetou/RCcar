@@ -1,5 +1,5 @@
 // =============================================================================
-//  HotWheels_V1 — firmware ESP32  v0.5.1
+//  HotWheels_V1 — firmware ESP32  v0.6
 // =============================================================================
 //
 //  Cablage batterie (1S Li-ion, 3.0 V vide -> 4.2 V plein) :
@@ -55,7 +55,19 @@ const int pinEN2 = -1;
 #define R1_OHMS          100000
 #define R2_OHMS          100000
 #define VBAT_FULL_CV     420
-#define VBAT_EMPTY_CV    300
+#define VBAT_EMPTY_CV    320       // 3.20V = 0% (cutoff securite Li-ion + marge)
+#define VBAT_CUTOFF_CV   320       // En dessous, le firmware refuse d'appliquer le throttle
+
+// Sag detection : si la tension instantanee chute brutalement vs moyenne lissee,
+// on reduit le PWM pour eviter de griller le L298 sur blocage mecanique.
+#define SAG_THRESHOLD_CV  20       // 200 mV de chute = surintensite probable
+#define SAG_REDUCTION_PCT 20       // -20% PWM tant que sag actif
+
+// Buzzer + LED RGB de statut (optionnels). Mettre a -1 pour desactiver.
+#define BUZZER_PIN       -1        // pin piezo (PWM/TONE) — ex: 13
+#define LED_R_PIN        -1        // ex: 12
+#define LED_G_PIN        -1        // ex: 14
+#define LED_B_PIN        -1        // ex: 27 (attention conflit pinIN2)
 
 // Bouton arret d'urgence — laisser -1 pour desactiver
 #define ESTOP_PIN        -1
@@ -75,13 +87,18 @@ unsigned long lastBatSend     = 0;
 unsigned long lastCmdRecvd    = 0;
 volatile bool emergencyStop   = false;
 float emaCentivolts           = -1.0f;
+float lastInstantCv           = -1.0f;   // dernier cv brut (avant EMA), pour detection sag
+int   sagPenaltyPct           = 0;       // 0..SAG_REDUCTION_PCT : penalite courante
+unsigned long sagUntilMs      = 0;       // jusqu'a quand maintenir la penalite
 esp_adc_cal_characteristics_t adcCal;
 
 // ----------------------------- LUT Li-ion -------------------------------------
 struct LiIonPoint { int cv; int pct; };
+// LUT remappee : 0% = 3.20V (cutoff securite). Permet de garder une marge avant
+// la limite chimique 3.00V. La carte refuse d'appliquer le throttle a 0%.
 const LiIonPoint LIION_LUT[] = {
   {420, 100}, {400,  85}, {385,  70}, {375,  55}, {370,  45},
-  {365,  35}, {360,  25}, {350,  15}, {340,   8}, {320,   3}, {300,   0}
+  {365,  35}, {360,  25}, {350,  15}, {340,   8}, {325,   2}, {320,   0}
 };
 const int LIION_LUT_SIZE = sizeof(LIION_LUT) / sizeof(LIION_LUT[0]);
 
@@ -123,12 +140,38 @@ int readVbatCentivolts() {
   g_lastVbatMv = vbatMv;
   int newCv = (int)((vbatMv + 5) / 10);
 
+  // Detection sag : si chute > seuil entre l'EMA et l'instant, on active la penalite.
+  if (emaCentivolts > 0 && (emaCentivolts - newCv) > SAG_THRESHOLD_CV) {
+    sagPenaltyPct = SAG_REDUCTION_PCT;
+    sagUntilMs = millis() + 500;
+  }
+  lastInstantCv = (float)newCv;
+
   if (emaCentivolts < 0) {
     emaCentivolts = (float)newCv;
   } else {
     emaCentivolts = EMA_ALPHA * (float)newCv + (1.0f - EMA_ALPHA) * emaCentivolts;
   }
   return (int)(emaCentivolts + 0.5f);
+}
+
+// Externe pour applyMotor / loop principal.
+bool isUnderCutoff() {
+  return emaCentivolts > 0 && emaCentivolts < (float)VBAT_CUTOFF_CV;
+}
+
+int currentSagPenalty() {
+  if (millis() > sagUntilMs) sagPenaltyPct = 0;
+  return sagPenaltyPct;
+}
+
+// Lecture temperature interne ESP32 (en Celsius). Note: precision +/- 5C.
+extern "C" uint8_t temprature_sens_read();
+int readTempCelsius() {
+  uint8_t raw = temprature_sens_read();
+  // Le capteur retourne F : C = (F - 32) * 5 / 9
+  int tF = (int)raw;
+  return (tF - 32) * 5 / 9;
 }
 
 void sendBatteryIfDue() {
@@ -138,13 +181,15 @@ void sendBatteryIfDue() {
   if (!SerialBT.hasClient()) return;
   int cv = readVbatCentivolts();
   int pct = percentFromCentivolts(cv);
-  // Trame enrichie : BAT:cv,pct,raw,pinMv,vbatMv
-  // - cv      : centivolts apres EMA (legacy, ce que l'app affichait)
-  // - pct     : pourcentage (LUT)
-  // - raw     : ADC brut moyen (0..4095) — diagnostic
-  // - pinMv   : tension au pin (mV) apres calibration eFuse — diagnostic
-  // - vbatMv  : Vbat reconstruite (mV) avant EMA — diagnostic
-  // L'app accepte aussi l'ancien format BAT:cv,pct (retro-compat).
+  // Trame enrichie v0.6 : BAT:cv,pct,raw,pinMv,vbatMv,tempC,sag
+  // - cv      : centivolts apres EMA (legacy)
+  // - pct     : pourcentage (LUT, 0% = 3.20V cutoff)
+  // - raw     : ADC brut moyen (0..4095)
+  // - pinMv   : tension au pin (mV) apres calibration eFuse
+  // - vbatMv  : Vbat reconstruite (mV) avant EMA
+  // - tempC   : temperature interne ESP32 (C) — precision +/- 5C
+  // - sag     : penalite sag courante (0..20)
+  // L'app accepte aussi 5 champs (firmware v0.4) ou 2 champs (legacy v0.3).
   SerialBT.print("BAT:");
   SerialBT.print(cv);
   SerialBT.print(",");
@@ -155,13 +200,32 @@ void sendBatteryIfDue() {
   SerialBT.print(g_lastPinMv);
   SerialBT.print(",");
   SerialBT.print(g_lastVbatMv);
+  SerialBT.print(",");
+  SerialBT.print(readTempCelsius());
+  SerialBT.print(",");
+  SerialBT.print(currentSagPenalty());
   SerialBT.print("\n");
 }
 
 // ----------------------------- MOTEUR -----------------------------------------
 
+// Flag bypass batterie : commande BYPASS_BAT:1 / BYPASS_BAT:0 cote app
+volatile bool batteryBypass = false;
+
 void applyMotor(int channel, int motorValue) {
   motorValue = constrain(motorValue, -100, 100);
+
+  // Coupure profonde batterie (sauf si l'utilisateur a active le bypass).
+  if (motorValue != 0 && isUnderCutoff() && !batteryBypass) {
+    motorValue = 0;
+  }
+
+  // Penalite sag : reduit le PWM en cas de chute brutale (blocage mecanique).
+  int penalty = currentSagPenalty();
+  if (penalty > 0 && motorValue != 0) {
+    motorValue = motorValue * (100 - penalty) / 100;
+  }
+
   int pwmValue = map(abs(motorValue), 0, 100, 0, 255);
 
   int in1, in2, en;
@@ -214,6 +278,15 @@ void handleCommand(String cmd) {
     return;
   }
 
+  // Bypass batterie : BYPASS_BAT:1 ou BYPASS_BAT:0
+  if (cmd.startsWith("BYPASS_BAT:")) {
+    batteryBypass = (cmd.substring(11).toInt() != 0);
+    SerialBT.print("BYPASS_BAT:");
+    SerialBT.print(batteryBypass ? 1 : 0);
+    SerialBT.print("\n");
+    return;
+  }
+
   int channel = 1;
   String payload = cmd;
   if (cmd.startsWith("M1:")) { channel = 1; payload = cmd.substring(3); }
@@ -235,7 +308,7 @@ void handleCommand(String cmd) {
 void setup() {
   Serial.begin(115200);
   SerialBT.begin("HotWheels_V1");
-  Serial.println("[v0.5.1] BT pret. Connecte ton telephone.");
+  Serial.println("[v0.6] BT pret. Connecte ton telephone.");
 
   pinMode(pinIN1, OUTPUT);
   pinMode(pinIN2, OUTPUT);

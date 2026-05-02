@@ -25,11 +25,18 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hotwheels.command.bluetooth.BatteryState
 import com.hotwheels.command.bluetooth.ConnectionState
+import com.hotwheels.command.data.BatteryBypassStore
 import com.hotwheels.command.data.SteeringEnabledStore
+import com.hotwheels.command.data.VbatHistory
 import com.hotwheels.command.ui.components.BatteryBadge
+import com.hotwheels.command.ui.components.LinkLostBanner
 import com.hotwheels.command.ui.components.BigThrottleNumber
 import com.hotwheels.command.ui.components.ConnectingRing
 import com.hotwheels.command.ui.components.CornerBrackets
@@ -54,7 +61,8 @@ fun DriveScreen(
     state: ConnectionState,
     viewModel: DriveViewModel,
     battery: BatteryState? = null,
-    linkFreshMs: Long = Long.MAX_VALUE
+    linkFreshMs: Long = Long.MAX_VALUE,
+    onBatteryBypass: (Boolean) -> Unit = {}
 ) {
     val palette = LocalPalette.current
     val enabled = state is ConnectionState.Connected
@@ -62,6 +70,27 @@ fun DriveScreen(
     var steeringValue by remember { mutableIntStateOf(0) }
     var diagOpen by remember { mutableStateOf(false) }
     val steeringEnabled by SteeringEnabledStore.enabled.collectAsStateWithLifecycle()
+    val cruise by viewModel.cruise.collectAsStateWithLifecycle()
+    val batteryBypass by BatteryBypassStore.enabled.collectAsStateWithLifecycle()
+
+    // Echantillonne la tension batterie dans VbatHistory pour le sparkline DiagSheet.
+    LaunchedEffect(battery?.centivolts, battery?.plausible) {
+        if (battery != null && battery.plausible) VbatHistory.reportCv(battery.centivolts)
+    }
+
+    // Watchdog : si link silencieux > seuil et cruise actif, on coupe le cruise par securite.
+    val linkLost = enabled && linkFreshMs > 3_000L
+    LaunchedEffect(linkLost) {
+        if (linkLost && cruise) viewModel.toggleCruise()
+    }
+
+    // Tick cruise toutes les 100 ms pour rafraichir la valeur emise (evite watchdog firmware).
+    LaunchedEffect(cruise) {
+        while (cruise) {
+            viewModel.cruiseTick()
+            kotlinx.coroutines.delay(100L)
+        }
+    }
 
     val ledState = when (state) {
         is ConnectionState.Connected -> LedState.On
@@ -93,7 +122,33 @@ fun DriveScreen(
                 deviceMac = deviceMac,
                 battery = battery,
                 linkFreshMs = linkFreshMs,
+                cruise = cruise,
+                onCruise = { viewModel.toggleCruise() },
                 onDiag = { diagOpen = true }
+            )
+
+            // Bannière watchdog : si lien silencieux > 3s, alerte + vibration.
+            LinkLostBanner(linkFreshMs = if (enabled) linkFreshMs else 0L)
+
+            // Bandeau batterie critique : si non plausible OU pourcentage <= 0, on coupe le moteur.
+            // Le bypass debloque les commandes ET propage la commande au firmware.
+            val batteryCritical = battery != null && battery.plausible && battery.percent <= 0
+            val effectiveCutoff = batteryCritical && !batteryBypass
+            LaunchedEffect(effectiveCutoff) {
+                if (effectiveCutoff) {
+                    sliderValue = 0
+                    steeringValue = 0
+                    viewModel.onSliderReleased()
+                    viewModel.onSteeringReleased()
+                }
+            }
+            if (batteryCritical) BatteryCriticalBanner(
+                bypassed = batteryBypass,
+                onToggleBypass = {
+                    val newVal = !batteryBypass
+                    BatteryBypassStore.set(newVal)
+                    onBatteryBypass(newVal)
+                }
             )
 
             Spacer(Modifier.height(8.dp))
@@ -105,7 +160,7 @@ fun DriveScreen(
                     sliderValue = sliderValue,
                     steeringValue = steeringValue,
                     steeringEnabled = steeringEnabled,
-                    enabled = enabled,
+                    enabled = enabled && !effectiveCutoff,
                     onSliderChange = {
                         sliderValue = it
                         viewModel.onSliderValueChange(it)
@@ -143,6 +198,8 @@ private fun TopBar(
     deviceMac: String,
     battery: BatteryState?,
     linkFreshMs: Long,
+    cruise: Boolean,
+    onCruise: () -> Unit,
     onDiag: () -> Unit
 ) {
     val palette = LocalPalette.current
@@ -185,6 +242,7 @@ private fun TopBar(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             LinkQualityIndicator(freshMs = linkFreshMs)
+            CruiseChip(active = cruise, onClick = onCruise)
             ThemeToggleButton()
             DiagButton(onClick = onDiag)
             BatteryBadge(battery = battery)
@@ -332,6 +390,67 @@ private fun ConnectedHud(
 }
 
 @Composable
+private fun CruiseChip(active: Boolean, onClick: () -> Unit) {
+    val palette = LocalPalette.current
+    androidx.compose.foundation.layout.Box(
+        modifier = Modifier
+            .clickable { onClick() }
+            .background(if (active) palette.panel else palette.surface)
+            .padding(horizontal = 10.dp, vertical = 4.dp)
+    ) {
+        Text(
+            text = if (active) "▣ CRUISE" else "□ CRUISE",
+            color = if (active) palette.accent else palette.textMuted,
+            fontFamily = MonoFamily,
+            fontSize = 11.sp,
+            fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal,
+            letterSpacing = 1.5.sp
+        )
+    }
+}
+
+@Composable
+private fun BatteryCriticalBanner(bypassed: Boolean, onToggleBypass: () -> Unit) {
+    val palette = LocalPalette.current
+    val color = if (bypassed) palette.magenta else palette.stateError
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(color.copy(alpha = 0.18f))
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = if (bypassed)
+                "⚠ BYPASS ACTIF — risque de decharge profonde Li-ion < 3,20 V"
+            else
+                "⚠ BATTERIE FAIBLE — commandes verrouillees (cutoff 3,20 V)",
+            color = color,
+            fontFamily = MonoFamily,
+            fontWeight = FontWeight.Bold,
+            fontSize = 12.sp,
+            letterSpacing = 2.sp
+        )
+        Box(
+            modifier = Modifier
+                .clickable { onToggleBypass() }
+                .background(color.copy(alpha = 0.3f))
+                .padding(horizontal = 12.dp, vertical = 4.dp)
+        ) {
+            Text(
+                text = if (bypassed) "■ ANNULER BYPASS" else "▶ BYPASS",
+                color = color,
+                fontFamily = MonoFamily,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 11.sp,
+                letterSpacing = 2.sp
+            )
+        }
+    }
+}
+
+@Composable
 private fun SteeringLeftZone(
     sliderValue: Int,
     steeringValue: Int,
@@ -345,10 +464,10 @@ private fun SteeringLeftZone(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // Bandeau slider direction.
+        // Bandeau slider direction — pousse vers le bas pour le rapprocher des cartes.
         Column(
             modifier = Modifier.fillMaxWidth().weight(1f),
-            verticalArrangement = Arrangement.Center,
+            verticalArrangement = Arrangement.Bottom,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(
@@ -394,12 +513,12 @@ private fun SteeringLeftZone(
             }
         }
 
-        // 3 cartes telemetrie compactes en ligne.
+        // 3 cartes telemetrie compactes en ligne — toutes meme largeur.
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Box(modifier = Modifier.weight(1f)) {
+            Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
                 TelemetryCard(label = "SIGNAL") {
                     Text(
                         text = if (enabled) "▣ ACTIF" else "▣ INACTIF",
@@ -411,7 +530,7 @@ private fun SteeringLeftZone(
                     )
                 }
             }
-            Box(modifier = Modifier.weight(1f)) {
+            Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
                 TelemetryCard(label = "PWM SORTIE") {
                     val pwm = (abs(sliderValue) * 255 / 100)
                     Row(verticalAlignment = Alignment.Bottom) {
@@ -432,7 +551,7 @@ private fun SteeringLeftZone(
                     }
                 }
             }
-            Box(modifier = Modifier.weight(1.1f)) {
+            Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
                 TelemetryCard(label = "DIRECTION", accent = true) {
                     DirectionTriangles(motorValue = sliderValue, modifier = Modifier.padding(top = 2.dp))
                     Spacer(Modifier.height(2.dp))

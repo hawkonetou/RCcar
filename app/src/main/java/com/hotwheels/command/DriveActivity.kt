@@ -110,7 +110,10 @@ class DriveActivity : ComponentActivity() {
                 val driveVm = remember {
                     DriveViewModel(
                         sendValue = { v -> service?.setTargetValue(v) },
-                        sendSteering = { v -> service?.setSteeringValue(v) }
+                        sendSteering = { v -> service?.setSteeringValue(v) },
+                        reportThrottleStat = { v ->
+                            com.hotwheels.command.data.SessionStatsStore.reportThrottle(applicationContext, v)
+                        }
                     )
                 }
                 val selectVm = remember { DeviceSelectionViewModel(applicationContext) }
@@ -141,7 +144,13 @@ class DriveActivity : ComponentActivity() {
                                 service?.connect(device.name, device.address)
                             }
                         )
-                    else -> DriveScreen(state = state, viewModel = driveVm, battery = battery, linkFreshMs = linkFresh)
+                    else -> DriveScreen(
+                        state = state,
+                        viewModel = driveVm,
+                        battery = battery,
+                        linkFreshMs = linkFresh,
+                        onBatteryBypass = { v -> service?.setBatteryBypass(v) }
+                    )
                 }
             }
         }
