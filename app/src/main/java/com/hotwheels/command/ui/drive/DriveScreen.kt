@@ -187,7 +187,11 @@ fun DriveScreen(
         }
 
         if (diagOpen) {
-            DiagSheet(onDismiss = { diagOpen = false }, battery = battery)
+            DiagSheet(
+                onDismiss = { diagOpen = false },
+                battery = battery,
+                onBypassToggle = { onBatteryBypass(it) }
+            )
         }
     }
 }

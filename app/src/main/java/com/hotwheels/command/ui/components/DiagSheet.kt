@@ -64,7 +64,11 @@ import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DiagSheet(onDismiss: () -> Unit, battery: com.hotwheels.command.bluetooth.BatteryState? = null) {
+fun DiagSheet(
+    onDismiss: () -> Unit,
+    battery: com.hotwheels.command.bluetooth.BatteryState? = null,
+    onBypassToggle: (Boolean) -> Unit = {}
+) {
     val palette = LocalPalette.current
     val context = LocalContext.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -80,6 +84,7 @@ fun DiagSheet(onDismiss: () -> Unit, battery: com.hotwheels.command.bluetooth.Ba
     val motorTimeMs by SessionStatsStore.motorTimeMs.collectAsStateWithLifecycle()
     val distanceArb by SessionStatsStore.distanceArb.collectAsStateWithLifecycle()
     val vbatSamples by VbatHistory.samples.collectAsStateWithLifecycle()
+    val batteryBypass by com.hotwheels.command.data.BatteryBypassStore.enabled.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
     LaunchedEffect(entries.size) {
         if (entries.isNotEmpty()) listState.scrollToItem(entries.size - 1)
@@ -208,6 +213,26 @@ fun DiagSheet(onDismiss: () -> Unit, battery: com.hotwheels.command.bluetooth.Ba
                 }
             }
 
+            Spacer(Modifier.height(6.dp))
+
+            // ------- Frein au relache (place sous DIRECTION pour grouper les options de pilotage)
+            ToggleRow("FREIN AU RELÂCHÉ", brakeOnRelease) { TuningStore.setBrakeOnRelease(context, it) }
+
+            Spacer(Modifier.height(10.dp))
+
+            // ------- Bypass batterie : accessible en permanence, pas seulement quand cutoff atteint
+            ToggleRow("BYPASS CUTOFF BATTERIE", batteryBypass) {
+                com.hotwheels.command.data.BatteryBypassStore.set(it)
+                onBypassToggle(it)
+            }
+            Text(
+                text = "▸ desactive la coupure 3.20V — utiliser en cas de besoin pour rentrer au chargeur",
+                color = palette.textSubtle,
+                fontFamily = MonoFamily,
+                fontSize = 10.sp,
+                letterSpacing = 0.5.sp
+            )
+
             Spacer(Modifier.height(10.dp))
 
             // ------- Diagnostic batterie (firmware v0.4+ requis pour raw/pinMv/vbatMv)
@@ -265,9 +290,8 @@ fun DiagSheet(onDismiss: () -> Unit, battery: com.hotwheels.command.bluetooth.Ba
             Spacer(Modifier.height(10.dp))
 
             // ------- Toggles : inversion + brake on release
-            ToggleRow("INV THROTTLE", invertThrottle) { TuningStore.setInvertThrottle(context, it) }
-            ToggleRow("INV DIRECTION", invertSteering) { TuningStore.setInvertSteering(context, it) }
-            ToggleRow("FREIN AU RELÂCHÉ", brakeOnRelease) { TuningStore.setBrakeOnRelease(context, it) }
+            ToggleRow("THROTTLE INVERSÉ", invertThrottle) { TuningStore.setInvertThrottle(context, it) }
+            ToggleRow("DIRECTION INVERSÉE", invertSteering) { TuningStore.setInvertSteering(context, it) }
 
             Spacer(Modifier.height(10.dp))
 
