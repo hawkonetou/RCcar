@@ -518,9 +518,13 @@ private fun SteeringLeftZone(
             }
         }
 
-        // 3 cartes telemetrie compactes en ligne — toutes meme largeur.
+        // 3 cartes telemetrie compactes en ligne — meme largeur ET meme hauteur fixe
+        // (74 dp couvre label 11sp + spacer 4dp + valeur 12-13sp + padding vertical 16dp,
+        // suffisant pour DotoFamily 22.sp aussi). Hauteur fixe = bordures parfaitement
+        // alignees, contrairement a IntrinsicSize.Min qui laisse 1-2px de jeu sur les
+        // contenus avec ascender plus haut.
         Row(
-            modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
+            modifier = Modifier.fillMaxWidth().height(74.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Box(modifier = Modifier.weight(1f).fillMaxHeight()) {

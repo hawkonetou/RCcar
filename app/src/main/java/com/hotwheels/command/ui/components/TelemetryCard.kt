@@ -5,6 +5,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -30,7 +32,7 @@ fun TelemetryCard(
     val palette = LocalPalette.current
     Column(
         modifier = modifier
-            .fillMaxWidth()
+            .fillMaxSize()
             .border(1.dp, if (accent) palette.accentDim35 else palette.accentDim20)
             .background(palette.panel)
             .padding(horizontal = 10.dp, vertical = 8.dp)
