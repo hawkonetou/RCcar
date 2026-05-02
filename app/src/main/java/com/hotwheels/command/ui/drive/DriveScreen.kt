@@ -281,10 +281,10 @@ private fun ConnectedHud(
             )
         } else {
             Column(
-                modifier = Modifier.width(160.dp),
+                modifier = Modifier.width(160.dp).fillMaxHeight(),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                TelemetryCard(label = "DIRECTION", accent = true) {
+                TelemetryCard(label = "DIRECTION", accent = true, modifier = Modifier.weight(1f)) {
                     DirectionTriangles(motorValue = sliderValue, modifier = Modifier.padding(top = 2.dp))
                     Spacer(Modifier.height(3.dp))
                     Text(
@@ -298,7 +298,7 @@ private fun ConnectedHud(
                         letterSpacing = 1.sp
                     )
                 }
-                TelemetryCard(label = "PWM SORTIE") {
+                TelemetryCard(label = "PWM SORTIE", modifier = Modifier.weight(1f)) {
                     val pwm = (abs(sliderValue) * 255 / 100)
                     Row(verticalAlignment = Alignment.Bottom) {
                         Text(
@@ -317,7 +317,7 @@ private fun ConnectedHud(
                         )
                     }
                 }
-                TelemetryCard(label = "SIGNAL") {
+                TelemetryCard(label = "SIGNAL", modifier = Modifier.weight(1f)) {
                     Text(
                         text = if (enabled) "▣ ACTIF" else "▣ INACTIF",
                         color = palette.accent,
