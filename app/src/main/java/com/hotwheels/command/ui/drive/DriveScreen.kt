@@ -558,8 +558,9 @@ private fun SteeringLeftZone(
             }
             Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
                 TelemetryCard(label = "DIRECTION", accent = true) {
-                    DirectionTriangles(motorValue = sliderValue, modifier = Modifier.padding(top = 2.dp))
-                    Spacer(Modifier.height(2.dp))
+                    // 2 lignes seulement (label + valeur) pour matcher la hauteur de
+                    // SIGNAL et PWM SORTIE — les triangles directionnels sont redondants
+                    // avec le big number THROTTLE central.
                     Text(
                         text = if (sliderValue > 0) "▶ AVANT"
                         else if (sliderValue < 0) "◀ ARRIÈRE"
