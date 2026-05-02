@@ -2,6 +2,7 @@ package com.hotwheels.command.ui.drive
 
 import androidx.lifecycle.ViewModel
 import com.hotwheels.command.bluetooth.SppConstants
+import com.hotwheels.command.data.ThrottleLimitStore
 
 class DriveViewModel(
     private val sendValue: (Int) -> Unit
@@ -13,7 +14,10 @@ class DriveViewModel(
         val clamped = newValue.coerceIn(SppConstants.MIN_VALUE, SppConstants.MAX_VALUE)
         if (clamped == sliderValue) return
         sliderValue = clamped
-        sendValue(-clamped)
+        // Limiteur global : 50 / 75 / 100 % du throttle max.
+        val limit = ThrottleLimitStore.limit.value
+        val limited = (clamped * limit / 100).coerceIn(SppConstants.MIN_VALUE, SppConstants.MAX_VALUE)
+        sendValue(-limited)
     }
 
     fun onSliderReleased() {

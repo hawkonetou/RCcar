@@ -41,6 +41,7 @@ class DriveActivity : ComponentActivity() {
     private var bound = false
     private val fallbackState = MutableStateFlow<ConnectionState>(ConnectionState.Idle)
     private val fallbackBattery = MutableStateFlow<BatteryState?>(null)
+    private val fallbackLink = MutableStateFlow(Long.MAX_VALUE)
 
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
@@ -104,6 +105,7 @@ class DriveActivity : ComponentActivity() {
             HotWheelsTheme(mode = themeMode) {
                 val state by (service?.state ?: fallbackState).collectAsState()
                 val battery by (service?.battery ?: fallbackBattery).collectAsState()
+                val linkFresh by (service?.linkFreshMs ?: fallbackLink).collectAsState()
 
                 val driveVm = remember {
                     DriveViewModel(sendValue = { v -> service?.setTargetValue(v) })
@@ -136,7 +138,7 @@ class DriveActivity : ComponentActivity() {
                                 service?.connect(device.name, device.address)
                             }
                         )
-                    else -> DriveScreen(state = state, viewModel = driveVm, battery = battery)
+                    else -> DriveScreen(state = state, viewModel = driveVm, battery = battery, linkFreshMs = linkFresh)
                 }
             }
         }

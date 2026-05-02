@@ -47,6 +47,10 @@ class BluetoothCarService : Service() {
     val battery: StateFlow<BatteryState?> = _battery.asStateFlow()
     private var batteryForwarder: Job? = null
 
+    private val _linkFreshMs = MutableStateFlow(Long.MAX_VALUE)
+    val linkFreshMs: StateFlow<Long> = _linkFreshMs.asStateFlow()
+    private var linkForwarder: Job? = null
+
     private var socket: BluetoothSocket? = null
     private var connection: CarConnection? = null
     private var connectJob: Job? = null
@@ -143,6 +147,8 @@ class BluetoothCarService : Service() {
             connection = conn
             batteryForwarder?.cancel()
             batteryForwarder = scope.launch { conn.battery.collect { _battery.value = it } }
+            linkForwarder?.cancel()
+            linkForwarder = scope.launch { conn.linkFreshMs.collect { _linkFreshMs.value = it } }
             _state.value = ConnectionState.Connected(deviceName, macAddress)
             DiagLog.log("SVC", "state=Connected")
             updateNotification(getString(R.string.notif_text_connected, deviceName))
@@ -181,10 +187,10 @@ class BluetoothCarService : Service() {
             _state.value = ConnectionState.Reconnecting(
                 deviceName, macAddress, attempt, SppConstants.RECONNECT_MAX_ATTEMPTS
             )
-            val backoff = min(
-                SppConstants.RECONNECT_BACKOFF_BASE_MS * attempt,
-                SppConstants.RECONNECT_BACKOFF_MAX_MS
-            )
+            // Backoff exponentiel borne : 1s, 2s, 4s, 8s, 16s, 30s, 30s, ...
+            val expo = SppConstants.RECONNECT_BACKOFF_BASE_MS shl (attempt - 1).coerceAtMost(20)
+            val backoff = min(expo, SppConstants.RECONNECT_BACKOFF_MAX_MS)
+            DiagLog.log("SVC", "reconnect attempt=$attempt backoff=${backoff}ms")
             delay(backoff)
             try {
                 val adapter = bluetoothAdapter() ?: throw IllegalStateException("no adapter")
@@ -198,13 +204,16 @@ class BluetoothCarService : Service() {
                 connection = conn
                 batteryForwarder?.cancel()
                 batteryForwarder = scope.launch { conn.battery.collect { _battery.value = it } }
+                linkForwarder?.cancel()
+                linkForwarder = scope.launch { conn.linkFreshMs.collect { _linkFreshMs.value = it } }
                 _state.value = ConnectionState.Connected(deviceName, macAddress)
                 return
             } catch (_: Exception) {
                 attempt++
             }
         }
-        _state.value = ConnectionState.Failed(deviceName, macAddress, "Reconnect timeout")
+        DiagLog.log("SVC", "reconnect ABANDON after attempt=$attempt elapsed=${System.currentTimeMillis() - start}ms")
+        _state.value = ConnectionState.Failed(deviceName, macAddress, "Reconnect timeout (5 min)")
     }
 
     fun disconnect() = stopServiceCleanly()
@@ -213,6 +222,9 @@ class BluetoothCarService : Service() {
         batteryForwarder?.cancel()
         batteryForwarder = null
         _battery.value = null
+        linkForwarder?.cancel()
+        linkForwarder = null
+        _linkFreshMs.value = Long.MAX_VALUE
         connection?.stop()
         connection = null
         runCatching { socket?.close() }

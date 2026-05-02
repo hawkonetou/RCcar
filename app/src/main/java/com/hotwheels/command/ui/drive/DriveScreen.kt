@@ -36,6 +36,7 @@ import com.hotwheels.command.ui.components.DiagSheet
 import com.hotwheels.command.ui.components.DirectionTriangles
 import com.hotwheels.command.ui.components.LedDot
 import com.hotwheels.command.ui.components.LedState
+import com.hotwheels.command.ui.components.LinkQualityIndicator
 import com.hotwheels.command.ui.components.NeonVerticalSlider
 import com.hotwheels.command.ui.components.ScanlineBackground
 import com.hotwheels.command.ui.components.TelemetryCard
@@ -49,7 +50,8 @@ import kotlin.math.abs
 fun DriveScreen(
     state: ConnectionState,
     viewModel: DriveViewModel,
-    battery: BatteryState? = null
+    battery: BatteryState? = null,
+    linkFreshMs: Long = Long.MAX_VALUE
 ) {
     val palette = LocalPalette.current
     val enabled = state is ConnectionState.Connected
@@ -85,6 +87,7 @@ fun DriveScreen(
                 deviceName = deviceName,
                 deviceMac = deviceMac,
                 battery = battery,
+                linkFreshMs = linkFreshMs,
                 onDiag = { diagOpen = true }
             )
 
@@ -124,6 +127,7 @@ private fun TopBar(
     deviceName: String,
     deviceMac: String,
     battery: BatteryState?,
+    linkFreshMs: Long,
     onDiag: () -> Unit
 ) {
     val palette = LocalPalette.current
@@ -165,6 +169,7 @@ private fun TopBar(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            LinkQualityIndicator(freshMs = linkFreshMs)
             ThemeToggleButton()
             DiagButton(onClick = onDiag)
             BatteryBadge(battery = battery)
@@ -357,7 +362,7 @@ private fun BottomBar(active: Boolean) {
                 letterSpacing = 2.sp
             )
             Text(
-                text = "v0.4.0",
+                text = "v0.5.0",
                 color = palette.textMuted,
                 fontFamily = MonoFamily,
                 fontSize = 11.sp

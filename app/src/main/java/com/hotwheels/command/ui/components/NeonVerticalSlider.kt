@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -17,7 +18,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import com.hotwheels.command.ui.theme.LocalPalette
 import kotlin.math.roundToInt
@@ -31,13 +34,27 @@ fun NeonVerticalSlider(
     modifier: Modifier = Modifier
 ) {
     val palette = LocalPalette.current
+    val haptics = LocalHapticFeedback.current
     var heightPx by remember { mutableFloatStateOf(1f) }
     val widthDp = 88.dp
+
+    // Memoize last reported value to detect zero-crossing and extreme events.
+    var lastReported by remember { mutableIntStateOf(0) }
 
     fun yToValue(y: Float): Int {
         val centered = (heightPx / 2f) - y
         val ratio = (centered / (heightPx / 2f)).coerceIn(-1f, 1f)
         return (ratio * 100f).roundToInt()
+    }
+
+    fun reportValue(v: Int) {
+        // Haptique : passage par 0, ou atteinte +/-100.
+        val crossedZero = (v == 0 && lastReported != 0) || (lastReported == 0 && v != 0)
+        val hitExtreme = (v == 100 && lastReported != 100) || (v == -100 && lastReported != -100)
+        if (crossedZero) haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        if (hitExtreme) haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+        lastReported = v
+        onValueChange(v)
     }
 
     Box(
@@ -47,21 +64,22 @@ fun NeonVerticalSlider(
             .pointerInput(enabled) {
                 if (!enabled) return@pointerInput
                 detectDragGestures(
-                    onDragStart = { o -> onValueChange(yToValue(o.y)) },
+                    onDragStart = { o -> reportValue(yToValue(o.y)) },
                     onDrag = { change, _ ->
                         change.consume()
-                        onValueChange(yToValue(change.position.y))
+                        reportValue(yToValue(change.position.y))
                     },
-                    onDragEnd = { onRelease() },
-                    onDragCancel = { onRelease() }
+                    onDragEnd = { lastReported = 0; onRelease() },
+                    onDragCancel = { lastReported = 0; onRelease() }
                 )
             }
             .pointerInput(enabled) {
                 if (!enabled) return@pointerInput
                 detectTapGestures(
                     onPress = { o ->
-                        onValueChange(yToValue(o.y))
+                        reportValue(yToValue(o.y))
                         tryAwaitRelease()
+                        lastReported = 0
                         onRelease()
                     }
                 )
