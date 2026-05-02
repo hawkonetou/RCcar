@@ -126,12 +126,24 @@ class CarConnection(
         _lastRxMillis.set(nowMillis())
         when {
             trimmed.startsWith("BAT:") -> {
+                // Formats acceptes :
+                //   BAT:cv,pct                       (firmware v0.3 — legacy)
+                //   BAT:cv,pct,raw,pinMv,vbatMv      (firmware v0.4+ — diagnostic enrichi)
                 val payload = trimmed.substring(4)
                 val parts = payload.split(",")
-                if (parts.size != 2) return
+                if (parts.size != 2 && parts.size != 5) return
                 val cv = parts[0].trim().toIntOrNull() ?: return
                 val pct = parts[1].trim().toIntOrNull() ?: return
-                _battery.value = BatteryState(centivolts = cv, percent = pct.coerceIn(0, 100))
+                val raw = if (parts.size == 5) parts[2].trim().toIntOrNull() else null
+                val pinMv = if (parts.size == 5) parts[3].trim().toIntOrNull() else null
+                val vbatMv = if (parts.size == 5) parts[4].trim().toIntOrNull() else null
+                _battery.value = BatteryState(
+                    centivolts = cv,
+                    percent = pct.coerceIn(0, 100),
+                    rawAdc = raw,
+                    pinMv = pinMv,
+                    vbatMv = vbatMv
+                )
             }
             trimmed == "PONG" -> { /* freshness deja mise a jour ci-dessus */ }
         }

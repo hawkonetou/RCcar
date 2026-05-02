@@ -1,5 +1,5 @@
 // =============================================================================
-//  HotWheels_V1 — firmware ESP32  v0.3
+//  HotWheels_V1 — firmware ESP32  v0.4
 // =============================================================================
 //
 //  Cablage batterie (1S Li-ion, 3.0 V vide -> 4.2 V plein) :
@@ -98,15 +98,25 @@ int percentFromCentivolts(int cv) {
 
 // ----------------------------- ADC --------------------------------------------
 
+// Variables globales pour le diagnostic ADC (exposees dans la trame BAT enrichie).
+int    g_lastRaw = 0;        // derniere lecture brute (0..4095)
+uint32_t g_lastPinMv = 0;    // tension au pin (mV) apres calibration eFuse
+uint32_t g_lastVbatMv = 0;   // tension Vbat reconstruite (mV) apres pont diviseur
+
 int readVbatCentivolts() {
   uint32_t sumMv = 0;
+  uint32_t sumRaw = 0;
   for (int i = 0; i < ADC_SAMPLES; i++) {
     int raw = analogRead(BAT_PIN);
+    sumRaw += raw;
     uint32_t mv = esp_adc_cal_raw_to_voltage(raw, &adcCal);
     sumMv += mv;
   }
   uint32_t avgMv = sumMv / ADC_SAMPLES;
+  g_lastRaw = (int)(sumRaw / ADC_SAMPLES);
+  g_lastPinMv = avgMv;
   uint32_t vbatMv = avgMv * (R1_OHMS + R2_OHMS) / R2_OHMS;
+  g_lastVbatMv = vbatMv;
   int newCv = (int)((vbatMv + 5) / 10);
 
   if (emaCentivolts < 0) {
@@ -124,10 +134,23 @@ void sendBatteryIfDue() {
   if (!SerialBT.hasClient()) return;
   int cv = readVbatCentivolts();
   int pct = percentFromCentivolts(cv);
+  // Trame enrichie : BAT:cv,pct,raw,pinMv,vbatMv
+  // - cv      : centivolts apres EMA (legacy, ce que l'app affichait)
+  // - pct     : pourcentage (LUT)
+  // - raw     : ADC brut moyen (0..4095) — diagnostic
+  // - pinMv   : tension au pin (mV) apres calibration eFuse — diagnostic
+  // - vbatMv  : Vbat reconstruite (mV) avant EMA — diagnostic
+  // L'app accepte aussi l'ancien format BAT:cv,pct (retro-compat).
   SerialBT.print("BAT:");
   SerialBT.print(cv);
   SerialBT.print(",");
   SerialBT.print(pct);
+  SerialBT.print(",");
+  SerialBT.print(g_lastRaw);
+  SerialBT.print(",");
+  SerialBT.print(g_lastPinMv);
+  SerialBT.print(",");
+  SerialBT.print(g_lastVbatMv);
   SerialBT.print("\n");
 }
 
@@ -208,7 +231,7 @@ void handleCommand(String cmd) {
 void setup() {
   Serial.begin(115200);
   SerialBT.begin("HotWheels_V1");
-  Serial.println("[v0.3] BT pret. Connecte ton telephone.");
+  Serial.println("[v0.4] BT pret. Connecte ton telephone.");
 
   pinMode(pinIN1, OUTPUT);
   pinMode(pinIN2, OUTPUT);

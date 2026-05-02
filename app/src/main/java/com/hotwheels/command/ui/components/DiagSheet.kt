@@ -50,7 +50,7 @@ import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DiagSheet(onDismiss: () -> Unit) {
+fun DiagSheet(onDismiss: () -> Unit, battery: com.hotwheels.command.bluetooth.BatteryState? = null) {
     val palette = LocalPalette.current
     val context = LocalContext.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -182,6 +182,11 @@ fun DiagSheet(onDismiss: () -> Unit) {
 
             Spacer(Modifier.height(10.dp))
 
+            // ------- Diagnostic batterie (firmware v0.4+ requis pour raw/pinMv/vbatMv)
+            BatteryDiagPanel(battery)
+
+            Spacer(Modifier.height(10.dp))
+
             // ------- Journal
             Box(
                 modifier = Modifier
@@ -202,6 +207,117 @@ fun DiagSheet(onDismiss: () -> Unit) {
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun BatteryDiagPanel(battery: com.hotwheels.command.bluetooth.BatteryState?) {
+    val palette = LocalPalette.current
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, palette.accentDim35)
+            .background(palette.surface)
+            .padding(10.dp)
+    ) {
+        Text(
+            text = "▸ DIAG BATTERIE",
+            color = palette.textMuted,
+            fontFamily = MonoFamily,
+            fontSize = 12.sp,
+            letterSpacing = 2.sp,
+            fontWeight = FontWeight.Medium
+        )
+        Spacer(Modifier.height(6.dp))
+        if (battery == null) {
+            Text(
+                text = "▸ aucune trame BAT recue",
+                color = palette.textSubtle,
+                fontFamily = MonoFamily,
+                fontSize = 12.sp
+            )
+            return
+        }
+        val plausible = battery.plausible
+        val statusColor = if (plausible) palette.lime else palette.magenta
+        val statusLabel = if (plausible) "PLAUSIBLE" else "ANORMALE (cv < 250)"
+        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            DiagKv("CV (EMA)", "${battery.centivolts}")
+            DiagKv("V (EMA)", "%.2f V".format(battery.volts))
+            DiagKv("PCT", "${battery.percent} %")
+            DiagKv("ÉTAT", statusLabel, valueColor = statusColor)
+        }
+        Spacer(Modifier.height(6.dp))
+        // Champs ESP32 v0.4+ — null avec firmware legacy.
+        if (battery.rawAdc != null || battery.pinMv != null || battery.vbatMv != null) {
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                DiagKv("RAW ADC", battery.rawAdc?.toString() ?: "--", hint = "0..4095")
+                DiagKv("PIN", battery.pinMv?.let { "$it mV" } ?: "--", hint = "Vbat / 2 attendu")
+                DiagKv("VBAT", battery.vbatMv?.let { "$it mV" } ?: "--", hint = "apres pont")
+            }
+            Spacer(Modifier.height(6.dp))
+            val raw = battery.rawAdc ?: -1
+            val pin = battery.pinMv ?: -1
+            val hint = when {
+                raw in 0..50 || pin in 0..80 ->
+                    "▸ pin pratiquement à 0 V → cablage flottant ou GPIO faux"
+                pin in 1500..2200 ->
+                    "▸ pin proche de Vbat/2 attendu → mesure OK"
+                pin > 3000 ->
+                    "▸ pin > 3 V → diviseur absent ou Vbat trop haute pour ADC"
+                else -> "▸ valeurs intermediaires — cherche un faux contact"
+            }
+            Text(
+                text = hint,
+                color = palette.textMuted,
+                fontFamily = MonoFamily,
+                fontSize = 11.sp,
+                letterSpacing = 0.5.sp
+            )
+        } else {
+            Text(
+                text = "▸ firmware ESP32 v0.3 detecte (BAT:cv,pct legacy) — flasher v0.4+ pour les champs RAW/PIN/VBAT",
+                color = palette.textSubtle,
+                fontFamily = MonoFamily,
+                fontSize = 11.sp,
+                letterSpacing = 0.5.sp
+            )
+        }
+    }
+}
+
+@Composable
+private fun DiagKv(
+    label: String,
+    value: String,
+    hint: String? = null,
+    valueColor: androidx.compose.ui.graphics.Color? = null
+) {
+    val palette = LocalPalette.current
+    Column {
+        Text(
+            text = label,
+            color = palette.textSubtle,
+            fontFamily = MonoFamily,
+            fontSize = 10.sp,
+            letterSpacing = 1.5.sp
+        )
+        Text(
+            text = value,
+            color = valueColor ?: palette.accent,
+            fontFamily = MonoFamily,
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 13.sp,
+            letterSpacing = 1.sp
+        )
+        if (hint != null) {
+            Text(
+                text = hint,
+                color = palette.textSubtle,
+                fontFamily = MonoFamily,
+                fontSize = 9.sp
+            )
         }
     }
 }

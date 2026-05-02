@@ -131,7 +131,7 @@ fun DriveScreen(
         }
 
         if (diagOpen) {
-            DiagSheet(onDismiss = { diagOpen = false })
+            DiagSheet(onDismiss = { diagOpen = false }, battery = battery)
         }
     }
 }

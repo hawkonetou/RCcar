@@ -37,15 +37,17 @@ import com.hotwheels.command.ui.theme.MonoFamily
 @Composable
 fun BatteryBadge(battery: BatteryState?, modifier: Modifier = Modifier) {
     val palette = LocalPalette.current
+    val implausible = battery != null && !battery.plausible
     val (fillColor, accentColor) = when {
         battery == null -> Brush.horizontalGradient(listOf(palette.textSubtle, palette.textSubtle)) to palette.textSubtle
+        implausible -> Brush.horizontalGradient(listOf(palette.textSubtle, palette.textSubtle)) to palette.magenta
         battery.percent <= 20 -> Brush.horizontalGradient(listOf(palette.stateConnecting, palette.stateError)) to palette.stateError
         battery.percent <= 50 -> Brush.horizontalGradient(listOf(palette.accent, palette.stateConnecting)) to palette.stateConnecting
         else -> Brush.horizontalGradient(listOf(palette.accent, palette.lime)) to palette.accent
     }
 
     val transition = rememberInfiniteTransition(label = "bat")
-    val pulseDuration = if (battery != null && battery.percent <= 20) 900 else 3200
+    val pulseDuration = if (battery != null && !implausible && battery.percent <= 20) 900 else 3200
     val brightness by transition.animateFloat(
         initialValue = 1f,
         targetValue = 1.25f,
@@ -69,7 +71,7 @@ fun BatteryBadge(battery: BatteryState?, modifier: Modifier = Modifier) {
                     .border(1.5.dp, accentColor, RoundedCornerShape(3.dp))
                     .padding(2.dp)
             ) {
-                val pct = (battery?.percent ?: 0).coerceIn(0, 100)
+                val pct = if (implausible) 0 else (battery?.percent ?: 0).coerceIn(0, 100)
                 if (pct > 0) {
                     Box(
                         modifier = Modifier
@@ -103,7 +105,11 @@ fun BatteryBadge(battery: BatteryState?, modifier: Modifier = Modifier) {
         }
         Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
             Text(
-                text = battery?.let { "${it.percent}%" } ?: "--%",
+                text = when {
+                    battery == null -> "--%"
+                    implausible -> "--"
+                    else -> "${battery.percent}%"
+                },
                 color = accentColor,
                 fontFamily = MonoFamily,
                 fontWeight = FontWeight.SemiBold,
@@ -112,8 +118,8 @@ fun BatteryBadge(battery: BatteryState?, modifier: Modifier = Modifier) {
             )
             if (battery != null) {
                 Text(
-                    text = "%.2f V".format(battery.volts),
-                    color = palette.textMuted,
+                    text = if (implausible) "TÉLÉ. ANORM." else "%.2f V".format(battery.volts),
+                    color = if (implausible) palette.magenta else palette.textMuted,
                     fontFamily = MonoFamily,
                     fontWeight = FontWeight.Normal,
                     fontSize = 11.sp,
