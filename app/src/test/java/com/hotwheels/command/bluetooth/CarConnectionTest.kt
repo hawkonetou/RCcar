@@ -98,4 +98,37 @@ class CarConnectionTest {
         c.stop()
         assertEquals("0\n", out.toString(Charsets.US_ASCII))
     }
+
+    @Test
+    fun `parses well-formed BAT line into BatteryState`() {
+        val c = newConnection()
+        c.parseLineForTest("BAT:374,82")
+        assertEquals(BatteryState(centivolts = 374, percent = 82), c.battery.value)
+    }
+
+    @Test
+    fun `clamps battery percent to 0-100 range`() {
+        val c = newConnection()
+        c.parseLineForTest("BAT:420,150")
+        assertEquals(100, c.battery.value?.percent)
+        c.parseLineForTest("BAT:280,-5")
+        assertEquals(0, c.battery.value?.percent)
+    }
+
+    @Test
+    fun `ignores malformed BAT lines`() {
+        val c = newConnection()
+        c.parseLineForTest("BAT:abc,82")
+        c.parseLineForTest("BAT:374")
+        c.parseLineForTest("HELLO")
+        c.parseLineForTest("")
+        assertEquals(null, c.battery.value)
+    }
+
+    @Test
+    fun `tolerates whitespace and trailing CR around BAT payload`() {
+        val c = newConnection()
+        c.parseLineForTest("  BAT: 374 , 82 \r")
+        assertEquals(BatteryState(centivolts = 374, percent = 82), c.battery.value)
+    }
 }

@@ -43,6 +43,10 @@ class BluetoothCarService : Service() {
     private val _state = MutableStateFlow<ConnectionState>(ConnectionState.Idle)
     val state: StateFlow<ConnectionState> = _state.asStateFlow()
 
+    private val _battery = MutableStateFlow<BatteryState?>(null)
+    val battery: StateFlow<BatteryState?> = _battery.asStateFlow()
+    private var batteryForwarder: Job? = null
+
     private var socket: BluetoothSocket? = null
     private var connection: CarConnection? = null
     private var connectJob: Job? = null
@@ -133,10 +137,12 @@ class BluetoothCarService : Service() {
             s.connect()
             DiagLog.log("SVC", "socket.connect OK")
             socket = s
-            val conn = CarConnection(s.outputStream)
+            val conn = CarConnection(s.outputStream, s.inputStream)
             conn.onFailure { scope.launch { startReconnect(macAddress) } }
             conn.start()
             connection = conn
+            batteryForwarder?.cancel()
+            batteryForwarder = scope.launch { conn.battery.collect { _battery.value = it } }
             _state.value = ConnectionState.Connected(deviceName, macAddress)
             DiagLog.log("SVC", "state=Connected")
             updateNotification(getString(R.string.notif_text_connected, deviceName))
@@ -186,10 +192,12 @@ class BluetoothCarService : Service() {
                 val s = device.createRfcommSocketToServiceRecord(SppConstants.SPP_UUID)
                 s.connect()
                 socket = s
-                val conn = CarConnection(s.outputStream)
+                val conn = CarConnection(s.outputStream, s.inputStream)
                 conn.onFailure { scope.launch { startReconnect(macAddress) } }
                 conn.start()
                 connection = conn
+                batteryForwarder?.cancel()
+                batteryForwarder = scope.launch { conn.battery.collect { _battery.value = it } }
                 _state.value = ConnectionState.Connected(deviceName, macAddress)
                 return
             } catch (_: Exception) {
@@ -202,6 +210,9 @@ class BluetoothCarService : Service() {
     fun disconnect() = stopServiceCleanly()
 
     private fun stopServiceCleanly() {
+        batteryForwarder?.cancel()
+        batteryForwarder = null
+        _battery.value = null
         connection?.stop()
         connection = null
         runCatching { socket?.close() }

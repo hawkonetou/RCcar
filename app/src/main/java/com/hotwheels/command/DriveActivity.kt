@@ -18,6 +18,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.hotwheels.command.bluetooth.BatteryState
 import com.hotwheels.command.bluetooth.BluetoothCarService
 import com.hotwheels.command.bluetooth.ConnectionState
 import com.hotwheels.command.data.LastDeviceStore
@@ -36,6 +37,7 @@ class DriveActivity : ComponentActivity() {
     private var service: BluetoothCarService? by mutableStateOf(null)
     private var bound = false
     private val fallbackState = MutableStateFlow<ConnectionState>(ConnectionState.Idle)
+    private val fallbackBattery = MutableStateFlow<BatteryState?>(null)
 
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
@@ -89,6 +91,7 @@ class DriveActivity : ComponentActivity() {
         setContent {
             HotWheelsTheme {
                 val state by (service?.state ?: fallbackState).collectAsState()
+                val battery by (service?.battery ?: fallbackBattery).collectAsState()
 
                 val driveVm = remember {
                     DriveViewModel(sendValue = { v -> service?.setTargetValue(v) })
@@ -121,7 +124,7 @@ class DriveActivity : ComponentActivity() {
                                 service?.connect(device.name, device.address)
                             }
                         )
-                    else -> DriveScreen(state = state, viewModel = driveVm)
+                    else -> DriveScreen(state = state, viewModel = driveVm, battery = battery)
                 }
             }
         }
