@@ -1,5 +1,5 @@
 // =============================================================================
-//  HotWheels_V1 — firmware ESP32  v0.5
+//  HotWheels_V1 — firmware ESP32  v0.5.1
 // =============================================================================
 //
 //  Cablage batterie (1S Li-ion, 3.0 V vide -> 4.2 V plein) :
@@ -47,11 +47,11 @@ const int pinIN4 = -1;
 const int pinEN2 = -1;
 
 // Batterie
-// IMPORTANT : GPIO32/33 sont aussi les pins XTAL_32K_P/N. Sur les ESP32 DevKit C
-// avec quartz 32 kHz soude (option RTC), GPIO32 est physiquement bloque par le
-// cristal et l'ADC retourne 0 (constate sur le board de ce projet, mai 2026).
-// GPIO34 est input-only, ADC1_CH6, jamais multifonction => choix sur.
-#define BAT_PIN          34        // GPIO 34 (ADC1_CH6) input-only
+// GPIO32 (ADC1_CH4) sur ce board. GPIO34 (ADC1_CH6) est aussi valide si besoin.
+// Note : si l'ADC retourne raw=0 alors que le multimetre lit la bonne tension au
+// pin, c'est presque toujours un faux contact ou une soudure froide sur le fil
+// du diviseur — verifier en bougeant la connexion plutot que de changer de pin.
+#define BAT_PIN          32        // GPIO 32 (ADC1_CH4)
 #define R1_OHMS          100000
 #define R2_OHMS          100000
 #define VBAT_FULL_CV     420
@@ -235,7 +235,7 @@ void handleCommand(String cmd) {
 void setup() {
   Serial.begin(115200);
   SerialBT.begin("HotWheels_V1");
-  Serial.println("[v0.5] BT pret. Connecte ton telephone.");
+  Serial.println("[v0.5.1] BT pret. Connecte ton telephone.");
 
   pinMode(pinIN1, OUTPUT);
   pinMode(pinIN2, OUTPUT);
