@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="60%">
+      <stop offset="0%"  stop-color="#0A1418"/>
+      <stop offset="60%" stop-color="#02080C"/>
+      <stop offset="100%" stop-color="#000000"/>
+    </radialGradient>
+    <filter id="glowS" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="6" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glowM" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="14" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glowL" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="22" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- ====== BACKGROUND ====== -->
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+
+  <!-- ====== CERCLE NEON PRINCIPAL ====== -->
+  <!-- halo exterieur diffus -->
+  <circle cx="512" cy="512" r="430" fill="none" stroke="#3DEAF1" stroke-width="6" opacity="0.35" filter="url(#glowL)"/>
+  <!-- bord neon principal -->
+  <circle cx="512" cy="512" r="400" fill="none" stroke="#3DEAF1" stroke-width="20" filter="url(#glowM)"/>
+  <!-- liseré blanc interne (cœur de neon) -->
+  <circle cx="512" cy="512" r="400" fill="none" stroke="#9CF0F4" stroke-width="6" opacity="0.9"/>
+
+  <!-- ====== VOITURE 3/4 — CENTRÉE, EN STROKE CYAN ====== -->
+  <g transform="translate(512, 512) scale(7.4)" filter="url(#glowS)">
+    <!-- carrosserie principale (stroke pur cyan) -->
+    <path d="M -42 14
+             L -42 10
+             Q -42 5 -38 4
+             L -36 -2
+             Q -34 -8 -28 -10
+             L -22 -14
+             Q -16 -16 -8 -16
+             L 14 -16
+             Q 22 -15 28 -10
+             L 32 -8
+             Q 38 -4 40 0
+             L 42 6
+             Q 43 10 42 14"
+          fill="none" stroke="#3DEAF1" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
+
+    <!-- bas de caisse / underglow accent (plus brillant) -->
+    <path d="M -38 12 L 36 12"
+          stroke="#9CF0F4" stroke-width="1.4" stroke-linecap="round" opacity="0.95"/>
+
+    <!-- pare-brise + vitres -->
+    <path d="M -22 -10 L -8 -14 L 14 -14 L 26 -10"
+          fill="none" stroke="#3DEAF1" stroke-width="1.2" stroke-linejoin="round"/>
+    <path d="M -22 -10 L -16 -3 L 22 -3 L 26 -10"
+          fill="none" stroke="#3DEAF1" stroke-width="0.8" opacity="0.7"/>
+    <!-- montant central -->
+    <line x1="2" y1="-13.4" x2="2" y2="-3" stroke="#3DEAF1" stroke-width="0.5" opacity="0.55"/>
+
+    <!-- ligne de capot -->
+    <line x1="-38" y1="2" x2="-30" y2="-4" stroke="#3DEAF1" stroke-width="0.6" opacity="0.7"/>
+
+    <!-- prise d'air capot -->
+    <path d="M -32 -2 L -24 -5 L -22 -3 L -30 0 Z"
+          fill="none" stroke="#3DEAF1" stroke-width="0.6" opacity="0.85"/>
+
+    <!-- phares -->
+    <path d="M -40 4 L -36 2 L -32 4 L -36 6 Z"
+          fill="#9CF0F4" stroke="#3DEAF1" stroke-width="0.5"/>
+
+    <!-- calandre / grille -->
+    <rect x="-37" y="9" width="10" height="3" rx="0.5" fill="none" stroke="#3DEAF1" stroke-width="0.5"/>
+    <line x1="-32" y1="9.4" x2="-32" y2="11.6" stroke="#3DEAF1" stroke-width="0.4"/>
+
+    <!-- aileron arriere -->
+    <path d="M 26 -9 L 36 -9 L 40 -7 L 36 -7 L 28 -7 Z"
+          fill="none" stroke="#3DEAF1" stroke-width="0.7"/>
+
+    <!-- ligne de cote -->
+    <line x1="-30" y1="4" x2="32" y2="4" stroke="#3DEAF1" stroke-width="0.5" opacity="0.6"/>
+
+    <!-- Roue avant (gauche, plus grande en perspective 3/4) -->
+    <g transform="translate(-25,14)">
+      <ellipse rx="8" ry="7" fill="none" stroke="#3DEAF1" stroke-width="1.4"/>
+      <ellipse rx="3.5" ry="3" fill="none" stroke="#3DEAF1" stroke-width="0.7" opacity="0.85"/>
+      <line x1="0" y1="-3" x2="0" y2="3" stroke="#3DEAF1" stroke-width="0.5"/>
+      <line x1="-3.4" y1="0" x2="3.4" y2="0" stroke="#3DEAF1" stroke-width="0.5"/>
+    </g>
+
+    <!-- Roue arriere (droite) -->
+    <g transform="translate(25,14)">
+      <ellipse rx="7.5" ry="6.4" fill="none" stroke="#3DEAF1" stroke-width="1.2"/>
+      <ellipse rx="3" ry="2.6" fill="none" stroke="#3DEAF1" stroke-width="0.6" opacity="0.85"/>
+    </g>
+  </g>
+
+  <!-- ====== ARC REFLET BAS (sol miroir) ====== -->
+  <path d="M 200 880 Q 512 990 824 880"
+        fill="none" stroke="#3DEAF1" stroke-width="14" opacity="0.55" filter="url(#glowM)"/>
+  <path d="M 280 920 Q 512 985 744 920"
+        fill="none" stroke="#3DEAF1" stroke-width="6" opacity="0.35"/>
+</svg>
