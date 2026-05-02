@@ -26,6 +26,7 @@ import com.hotwheels.command.ui.drive.DriveViewModel
 import com.hotwheels.command.ui.select.DeviceSelectionScreen
 import com.hotwheels.command.ui.select.DeviceSelectionViewModel
 import com.hotwheels.command.ui.theme.HotWheelsTheme
+import com.hotwheels.command.util.DiagLog
 import com.hotwheels.command.util.PermissionUtils
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -38,12 +39,18 @@ class DriveActivity : ComponentActivity() {
 
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
-            val b = binder as? BluetoothCarService.LocalBinder ?: return
+            DiagLog.log("ACT", "onServiceConnected name=$name binder=${binder != null}")
+            val b = binder as? BluetoothCarService.LocalBinder
+            if (b == null) {
+                DiagLog.log("ACT", "onServiceConnected: binder cast FAILED")
+                return
+            }
             service = b.service
             bound = true
             tryAutoConnect()
         }
         override fun onServiceDisconnected(name: ComponentName?) {
+            DiagLog.log("ACT", "onServiceDisconnected name=$name")
             bound = false
             service = null
         }
@@ -59,9 +66,13 @@ class DriveActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        DiagLog.log("ACT", "onCreate")
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-        if (!PermissionUtils.hasBluetoothConnect(this)) {
+        val hasPerm = PermissionUtils.hasBluetoothConnect(this)
+        DiagLog.log("ACT", "hasBluetoothConnect=$hasPerm")
+        if (!hasPerm) {
+            DiagLog.log("ACT", "requesting BLUETOOTH_CONNECT")
             requestPermission.launch(PermissionUtils.BT_CONNECT)
         } else {
             bindToService()
@@ -85,11 +96,24 @@ class DriveActivity : ComponentActivity() {
                     }
                 }
 
-                when (state) {
-                    is ConnectionState.Idle, is ConnectionState.Failed ->
+                when (val s = state) {
+                    is ConnectionState.Idle ->
                         DeviceSelectionScreen(
                             viewModel = selectVm,
-                            onDeviceSelected = { device -> service?.connect(device.name, device.address) }
+                            lastError = null,
+                            onDeviceSelected = { device ->
+                                DiagLog.log("ACT", "tap device='${device.name}' mac=${device.address} service=${if (service == null) "null" else "ok"}")
+                                service?.connect(device.name, device.address)
+                            }
+                        )
+                    is ConnectionState.Failed ->
+                        DeviceSelectionScreen(
+                            viewModel = selectVm,
+                            lastError = "${s.deviceName}: ${s.reason}",
+                            onDeviceSelected = { device ->
+                                DiagLog.log("ACT", "tap device='${device.name}' mac=${device.address} service=${if (service == null) "null" else "ok"}")
+                                service?.connect(device.name, device.address)
+                            }
                         )
                     else -> DriveScreen(state = state, viewModel = driveVm)
                 }
@@ -98,9 +122,16 @@ class DriveActivity : ComponentActivity() {
     }
 
     private fun bindToService() {
+        DiagLog.log("ACT", "bindToService start")
         val intent = Intent(this, BluetoothCarService::class.java)
-        startForegroundService(intent)
-        bindService(intent, connection, Context.BIND_AUTO_CREATE)
+        try {
+            startForegroundService(intent)
+            DiagLog.log("ACT", "startForegroundService OK")
+        } catch (e: Throwable) {
+            DiagLog.log("ACT", "startForegroundService FAILED ${e::class.java.simpleName}: ${e.message}")
+        }
+        val bindResult = bindService(intent, connection, Context.BIND_AUTO_CREATE)
+        DiagLog.log("ACT", "bindService returned=$bindResult")
     }
 
     private fun tryAutoConnect() {

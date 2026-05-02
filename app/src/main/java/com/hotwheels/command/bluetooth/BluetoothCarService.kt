@@ -18,6 +18,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.hotwheels.command.HotWheelsApp
 import com.hotwheels.command.R
+import com.hotwheels.command.util.DiagLog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -68,15 +69,21 @@ class BluetoothCarService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        // Must call startForeground within 5s of startForegroundService — show a placeholder
-        // notification immediately, before the user has even chosen a device.
-        startForeground(NOTIF_ID, buildNotification(getString(R.string.notif_state_idle)))
+        DiagLog.log("SVC", "onCreate")
+        try {
+            startForeground(NOTIF_ID, buildNotification(getString(R.string.notif_state_idle)))
+            DiagLog.log("SVC", "startForeground OK")
+        } catch (e: Throwable) {
+            DiagLog.log("SVC", "startForeground FAILED ${e::class.java.simpleName}: ${e.message}")
+            throw e
+        }
         ContextCompat.registerReceiver(
             this,
             disconnectionReceiver,
             IntentFilter(BluetoothDevice.ACTION_ACL_DISCONNECTED),
             ContextCompat.RECEIVER_NOT_EXPORTED
         )
+        DiagLog.log("SVC", "onCreate done")
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -97,33 +104,50 @@ class BluetoothCarService : Service() {
     }
 
     fun connect(deviceName: String, macAddress: String) {
+        DiagLog.log("SVC", "connect() called name='$deviceName' mac=$macAddress")
         connectJob?.cancel()
         connectJob = scope.launch { doConnect(deviceName, macAddress) }
     }
 
     @SuppressLint("MissingPermission")
     private suspend fun doConnect(deviceName: String, macAddress: String) {
+        DiagLog.log("SVC", "doConnect enter")
         _state.value = ConnectionState.Connecting(deviceName, macAddress)
+        DiagLog.log("SVC", "state=Connecting")
         updateNotification(getString(R.string.notif_state_connecting, deviceName))
         val adapter = bluetoothAdapter() ?: run {
+            DiagLog.log("SVC", "no Bluetooth adapter")
             _state.value = ConnectionState.Failed(deviceName, macAddress, "No Bluetooth adapter")
             updateNotification(getString(R.string.notif_state_failed))
             return
         }
+        DiagLog.log("SVC", "adapter ok enabled=${adapter.isEnabled}")
         val device = adapter.getRemoteDevice(macAddress)
+        DiagLog.log("SVC", "getRemoteDevice ok bond=${device.bondState}")
         try {
+            DiagLog.log("SVC", "createRfcommSocketToServiceRecord uuid=${SppConstants.SPP_UUID}")
             val s = device.createRfcommSocketToServiceRecord(SppConstants.SPP_UUID)
+            DiagLog.log("SVC", "socket created, calling cancelDiscovery")
             adapter.cancelDiscovery()
+            DiagLog.log("SVC", "cancelDiscovery ok, calling socket.connect (BLOCKING)")
             s.connect()
+            DiagLog.log("SVC", "socket.connect OK")
             socket = s
             val conn = CarConnection(s.outputStream)
             conn.onFailure { scope.launch { startReconnect(macAddress) } }
             conn.start()
             connection = conn
             _state.value = ConnectionState.Connected(deviceName, macAddress)
+            DiagLog.log("SVC", "state=Connected")
             updateNotification(getString(R.string.notif_text_connected, deviceName))
         } catch (e: Exception) {
-            _state.value = ConnectionState.Failed(deviceName, macAddress, e.message ?: "connect failed")
+            val stack = e.stackTraceToString().lines().take(8).joinToString(" | ")
+            DiagLog.log("SVC", "doConnect EXC ${e::class.java.simpleName}: ${e.message} :: $stack")
+            _state.value = ConnectionState.Failed(
+                deviceName,
+                macAddress,
+                "${e::class.java.simpleName}: ${e.message ?: "connect failed"}"
+            )
             updateNotification(getString(R.string.notif_state_failed))
             runCatching { socket?.close() }
             socket = null
