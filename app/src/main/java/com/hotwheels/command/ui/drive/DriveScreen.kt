@@ -1,6 +1,7 @@
 package com.hotwheels.command.ui.drive
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -210,7 +211,8 @@ private fun TopBar(
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.weight(1f, fill = false)
         ) {
             LedDot(state = ledState)
             Text(
@@ -219,22 +221,18 @@ private fun TopBar(
                 fontFamily = MonoFamily,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 14.sp,
-                letterSpacing = 1.5.sp
+                letterSpacing = 1.5.sp,
+                maxLines = 1,
+                softWrap = false
             )
             Text(
                 text = "▸ $deviceMac",
                 color = palette.textMuted,
                 fontFamily = MonoFamily,
                 fontSize = 12.sp,
-                letterSpacing = 1.sp
-            )
-            Text(
-                text = "concept by Tom LEBRETON",
-                color = palette.magenta,
-                fontFamily = MonoFamily,
-                fontStyle = FontStyle.Italic,
-                fontSize = 11.sp,
-                letterSpacing = 1.5.sp
+                letterSpacing = 1.sp,
+                maxLines = 1,
+                softWrap = false
             )
         }
         Row(
@@ -435,16 +433,19 @@ private fun BatteryCriticalBanner(bypassed: Boolean, onToggleBypass: () -> Unit)
         Box(
             modifier = Modifier
                 .clickable { onToggleBypass() }
-                .background(color.copy(alpha = 0.3f))
-                .padding(horizontal = 12.dp, vertical = 4.dp)
+                .background(if (bypassed) color.copy(alpha = 0.35f) else androidx.compose.ui.graphics.Color(0xFFFFC850).copy(alpha = 0.25f))
+                .border(1.5.dp, if (bypassed) color else androidx.compose.ui.graphics.Color(0xFFFFC850))
+                .padding(horizontal = 14.dp, vertical = 5.dp)
         ) {
             Text(
-                text = if (bypassed) "■ ANNULER BYPASS" else "▶ BYPASS",
-                color = color,
+                text = if (bypassed) "■ ANNULER BYPASS" else "↩ BYPASS (rentrer au chargeur)",
+                color = if (bypassed) color else androidx.compose.ui.graphics.Color(0xFFFFC850),
                 fontFamily = MonoFamily,
-                fontWeight = FontWeight.SemiBold,
+                fontWeight = FontWeight.Bold,
                 fontSize = 11.sp,
-                letterSpacing = 2.sp
+                letterSpacing = 2.sp,
+                maxLines = 1,
+                softWrap = false
             )
         }
     }
@@ -624,6 +625,16 @@ private fun BottomBar(active: Boolean) {
                 letterSpacing = 2.sp
             )
         }
+        Text(
+            text = "concept by Tom LEBRETON",
+            color = palette.magenta,
+            fontFamily = MonoFamily,
+            fontStyle = FontStyle.Italic,
+            fontSize = 11.sp,
+            letterSpacing = 1.5.sp,
+            maxLines = 1,
+            softWrap = false
+        )
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
                 text = "▶ PILOTAGE",

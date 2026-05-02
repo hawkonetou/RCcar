@@ -103,7 +103,10 @@ fun BatteryBadge(battery: BatteryState?, modifier: Modifier = Modifier) {
                     .background(accentColor, RoundedCornerShape(topEnd = 2.dp, bottomEnd = 2.dp))
             )
         }
-        Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(0.dp),
+            modifier = Modifier.width(72.dp)
+        ) {
             Text(
                 text = when {
                     battery == null -> "--%"
@@ -114,16 +117,20 @@ fun BatteryBadge(battery: BatteryState?, modifier: Modifier = Modifier) {
                 fontFamily = MonoFamily,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 14.sp,
-                letterSpacing = 1.sp
+                letterSpacing = 1.sp,
+                maxLines = 1,
+                softWrap = false
             )
             if (battery != null) {
                 Text(
-                    text = if (implausible) "TÉLÉ. ANORM." else "%.2f V".format(battery.volts),
+                    text = if (implausible) "ANORM." else "%.2f V".format(battery.volts),
                     color = if (implausible) palette.magenta else palette.textMuted,
                     fontFamily = MonoFamily,
                     fontWeight = FontWeight.Normal,
                     fontSize = 11.sp,
-                    letterSpacing = 1.sp
+                    letterSpacing = 1.sp,
+                    maxLines = 1,
+                    softWrap = false
                 )
             }
         }

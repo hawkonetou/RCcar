@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>DriveScreen UX fix — proposition</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: #02060A;
+    color: #3DEAF1;
+    font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+    padding: 40px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 50px;
+  }
+
+  h1 {
+    font-size: 12px;
+    letter-spacing: 0.45em;
+    color: rgba(61,234,241,0.55);
+    margin: 0;
+  }
+  h2 {
+    font-size: 11px;
+    letter-spacing: 0.35em;
+    color: rgba(61,234,241,0.5);
+    margin: 0 0 14px 0;
+    align-self: flex-start;
+  }
+  .legend { font-size: 10px; color: rgba(61,234,241,0.45); letter-spacing: 0.2em; }
+
+  .phone {
+    width: 1024px;
+    height: 460px;
+    background:
+      radial-gradient(ellipse at center, rgba(61,234,241,0.05) 0%, transparent 60%),
+      #050709;
+    border: 1px solid rgba(61,234,241,0.18);
+    border-radius: 18px;
+    position: relative;
+    overflow: hidden;
+    padding: 14px 18px;
+    box-shadow: 0 30px 60px -20px rgba(61,234,241,0.10);
+    display: flex;
+    flex-direction: column;
+    background-image:
+      linear-gradient(rgba(61,234,241,0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(61,234,241,0.045) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+  .phone::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent 0, transparent 3px, rgba(0,0,0,0.18) 3px, rgba(0,0,0,0.18) 4px);
+    pointer-events: none;
+  }
+
+  /* ---------- TOP BAR ---------- */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    height: 32px;
+    z-index: 2;
+  }
+  .topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    flex: 1;
+  }
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .led {
+    width: 18px; height: 18px; border-radius: 50%;
+    background: radial-gradient(circle, #3DEAF1 0%, rgba(61,234,241,0.18) 70%, transparent 100%);
+    box-shadow: 0 0 12px #3DEAF1;
+    flex-shrink: 0;
+  }
+  .device-name {
+    color: #3DEAF1; font-weight: 600; font-size: 14px; letter-spacing: 1.5px;
+    white-space: nowrap;
+  }
+  .device-mac {
+    color: rgba(61,234,241,0.5); font-size: 12px; letter-spacing: 1px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .quality-bars {
+    display: inline-flex; gap: 2px; align-items: flex-end; height: 14px;
+  }
+  .quality-bars span {
+    width: 3px; background: #5DD962; border-radius: 1px;
+  }
+  .quality-bars span:nth-child(1) { height: 4px; }
+  .quality-bars span:nth-child(2) { height: 8px; }
+  .quality-bars span:nth-child(3) { height: 12px; }
+
+  .chip {
+    border: 1px solid rgba(61,234,241,0.35);
+    background: rgba(61,234,241,0.04);
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px; letter-spacing: 1.5px;
+    color: rgba(61,234,241,0.65);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .chip.active {
+    background: rgba(61,234,241,0.15);
+    border-color: #3DEAF1;
+    color: #3DEAF1;
+    font-weight: 600;
+  }
+  .icon-btn {
+    border: 1px solid rgba(61,234,241,0.35);
+    width: 28px; height: 28px; display: inline-flex;
+    align-items: center; justify-content: center;
+    border-radius: 4px;
+    color: rgba(61,234,241,0.7);
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  /* ---------- BATTERY ---------- */
+  .battery {
+    display: inline-flex; align-items: center; gap: 8px;
+    flex-shrink: 0;
+  }
+  .battery-shell {
+    position: relative; width: 64px; height: 26px;
+  }
+  .battery-shell .body {
+    width: 58px; height: 100%;
+    border: 1.5px solid var(--bat-color, #3DEAF1);
+    border-radius: 3px; padding: 2px;
+    position: relative;
+  }
+  .battery-shell .fill {
+    height: 100%;
+    background: var(--bat-fill, linear-gradient(90deg, #3DEAF1, #5DD962));
+    border-radius: 1px;
+    width: var(--bat-pct, 70%);
+  }
+  .battery-shell .nub {
+    position: absolute;
+    right: 0; top: 50%; transform: translateY(-50%);
+    width: 5px; height: 12px;
+    background: var(--bat-color, #3DEAF1);
+    border-radius: 0 2px 2px 0;
+  }
+  .battery-text {
+    width: 72px; /* fixe : aucune compression possible */
+    display: flex; flex-direction: column;
+  }
+  .battery-text .pct {
+    color: var(--bat-color, #3DEAF1);
+    font-size: 14px; font-weight: 600; letter-spacing: 1px;
+    white-space: nowrap;
+  }
+  .battery-text .v {
+    color: rgba(61,234,241,0.5);
+    font-size: 11px; letter-spacing: 1px;
+    white-space: nowrap;
+  }
+  /* etat critique */
+  .battery.critical { --bat-color: #FF2DAA; --bat-fill: linear-gradient(90deg,#FF2DAA,#FFB347); --bat-pct: 13%; }
+
+  /* ---------- HUD CENTER ---------- */
+  .hud {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1.1fr 0.6fr;
+    gap: 14px;
+    margin-top: 12px;
+  }
+  .corners-frame {
+    position: relative; padding: 12px;
+  }
+  .corners-frame::before, .corners-frame::after,
+  .corners-frame > .c-tl, .corners-frame > .c-bl,
+  .corners-frame > .c-tr, .corners-frame > .c-br {
+    content: ''; position: absolute; width: 14px; height: 14px;
+    border: 1.5px solid rgba(61,234,241,0.45);
+  }
+  .corners-frame::before { top: 0; left: 0; border-right: none; border-bottom: none; }
+  .corners-frame::after { top: 0; right: 0; border-left: none; border-bottom: none; }
+  .corners-frame > .c-bl { bottom: 0; left: 0; border-right: none; border-top: none; }
+  .corners-frame > .c-br { bottom: 0; right: 0; border-left: none; border-top: none; }
+
+  /* gauche : direction (slider on) ou cards stacked (slider off) */
+  .left-cards {
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .card {
+    border: 1px solid rgba(61,234,241,0.35);
+    background: rgba(61,234,241,0.03);
+    padding: 8px 12px;
+    flex: 1;
+    display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .card.accent { border-color: #3DEAF1; background: rgba(61,234,241,0.08); }
+  .card .label {
+    color: rgba(61,234,241,0.5);
+    font-size: 10px; letter-spacing: 2px;
+    margin-bottom: 4px;
+  }
+  .card .val {
+    color: #3DEAF1;
+    font-size: 13px; font-weight: 600; letter-spacing: 1px;
+  }
+  .card .pwm {
+    font-size: 22px; font-weight: 800;
+    color: #3DEAF1;
+  }
+  .card .pwm small { font-size: 11px; color: rgba(61,234,241,0.5); font-weight: 400; margin-left: 4px; }
+
+  /* steering on layout : slider en haut, 3 cards en ligne en bas */
+  .left-steering {
+    display: flex; flex-direction: column; gap: 10px;
+    height: 100%;
+  }
+  .steering-slider-zone {
+    flex: 1;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    gap: 4px;
+  }
+  .steering-header {
+    display: flex; justify-content: space-between; align-items: center;
+    color: rgba(61,234,241,0.5); font-size: 10px; letter-spacing: 2px;
+  }
+  .steering-header .v {
+    color: #3DEAF1; font-weight: 600; font-size: 11px;
+  }
+  .h-slider {
+    height: 38px;
+    border: 1px solid rgba(61,234,241,0.35);
+    border-radius: 6px;
+    background: linear-gradient(90deg,
+      rgba(255,45,170,0.12),
+      rgba(61,234,241,0.05) 50%,
+      rgba(61,234,241,0.12));
+    position: relative;
+  }
+  .h-slider .center { position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background: rgba(61,234,241,0.55); }
+  .h-slider .thumb { position: absolute; left: 50%; top: -4px; bottom: -4px; width: 4px; background: #3DEAF1; box-shadow: 0 0 8px #3DEAF1; }
+  .h-slider .ticks { position: absolute; inset: 0; display: flex; justify-content: space-between; padding: 0 4px; }
+  .h-slider .ticks span { width: 1px; background: rgba(61,234,241,0.18); }
+  .h-slider-labels {
+    display: flex; justify-content: space-between;
+    font-size: 9px; color: rgba(61,234,241,0.45); letter-spacing: 1px;
+  }
+  .h-slider-labels .mid { color: #3DEAF1; }
+
+  .left-3cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;   /* memes largeurs garanties */
+    gap: 6px;
+  }
+  .left-3cards .card { padding: 6px 10px; }
+
+  /* centre : THROTTLE % */
+  .throttle-zone {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 8px;
+  }
+  .throttle-zone .head {
+    color: rgba(61,234,241,0.55);
+    font-size: 11px; letter-spacing: 3px;
+  }
+  .throttle-zone .big {
+    font-size: 96px; line-height: 1;
+    font-weight: 900;
+    color: #3DEAF1;
+    text-shadow: 0 0 20px rgba(61,234,241,0.55);
+    letter-spacing: -2px;
+    margin: 6px 0;
+    font-family: 'Doto', monospace;
+  }
+  .throttle-zone .send {
+    color: #3DEAF1;
+    font-size: 12px; letter-spacing: 2.5px;
+  }
+
+  /* droite : slider vertical */
+  .vslider-zone {
+    display: flex; gap: 6px; align-items: stretch;
+  }
+  .vslider-labels {
+    display: flex; flex-direction: column; justify-content: space-between;
+    font-size: 11px; color: rgba(61,234,241,0.45); letter-spacing: 1px;
+  }
+  .vslider-labels .mid { color: #3DEAF1; }
+  .vslider {
+    width: 26px;
+    border: 1px solid rgba(61,234,241,0.35);
+    border-radius: 6px;
+    background: linear-gradient(180deg,
+      rgba(61,234,241,0.12),
+      rgba(61,234,241,0.04) 50%,
+      rgba(255,45,170,0.12));
+    position: relative;
+  }
+  .vslider .center-h { position: absolute; left: -3px; right: -3px; top: 50%; height: 1px; background: rgba(61,234,241,0.6); }
+  .vslider .thumb { position: absolute; left: -4px; right: -4px; top: 50%; height: 4px; background: #3DEAF1; box-shadow: 0 0 8px #3DEAF1; transform: translateY(-50%); }
+
+  /* bottom bar */
+  .bottombar {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 8px;
+    font-size: 11px; letter-spacing: 2px;
+    color: rgba(61,234,241,0.5);
+  }
+  .bottombar .credit {
+    color: #FF2DAA; font-style: italic; letter-spacing: 1.5px;
+  }
+  .bottombar .right { display: flex; gap: 10px; align-items: center; }
+
+  /* warning banner (battery critical) */
+  .banner {
+    background: rgba(255,80,80,0.15);
+    border: 1.5px solid rgba(255,80,80,0.6);
+    color: #FF6E6E;
+    padding: 4px 12px;
+    text-align: center;
+    font-size: 11px; letter-spacing: 2px; font-weight: 700;
+    margin-top: 6px;
+  }
+
+  /* annotations */
+  .annot {
+    color: rgba(255,224,102,0.85);
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    align-self: flex-start;
+    line-height: 1.5;
+    max-width: 1024px;
+    border-left: 2px solid rgba(255,224,102,0.6);
+    padding-left: 12px;
+    margin: -25px 0 0 0;
+  }
+  .scenario { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+</style>
+</head>
+<body>
+
+<h1>▸ DRIVESCREEN — UX FIX PROPOSITION ◂</h1>
+<div class="legend">3 scénarios : direction OFF · direction ON · batterie critique avec bypass</div>
+
+<!-- ============== SCENARIO A : direction OFF ============== -->
+<div class="scenario">
+  <h2>A · DIRECTION OFF · CONNECTÉ · BATT 73%</h2>
+  <div class="phone">
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="led"></div>
+        <div class="device-name">HotWheels_V1</div>
+        <div class="device-mac">▸ 88:13:BF:68:F0:FE</div>
+      </div>
+      <div class="topbar-right">
+        <div class="quality-bars"><span></span><span></span><span></span></div>
+        <div class="chip">□ CRUISE</div>
+        <div class="icon-btn">☀</div>
+        <div class="icon-btn">⊕</div>
+        <div class="battery">
+          <div class="battery-shell">
+            <div class="body"><div class="fill" style="--bat-pct: 73%;"></div></div>
+            <div class="nub"></div>
+          </div>
+          <div class="battery-text">
+            <div class="pct">73%</div>
+            <div class="v">3,82 V</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hud">
+      <!-- Gauche : 3 cards stacked -->
+      <div class="left-cards">
+        <div class="card accent">
+          <div>
+            <div class="label">DIRECTION</div>
+            <div style="color:rgba(61,234,241,0.5); letter-spacing:6px; font-size:14px;">▶▶▶▶▶</div>
+          </div>
+          <div class="val">■ ARRÊT</div>
+        </div>
+        <div class="card">
+          <div class="label">PWM SORTIE</div>
+          <div class="pwm">0<small>/ 255</small></div>
+        </div>
+        <div class="card">
+          <div class="label">SIGNAL</div>
+          <div class="val">▣ ACTIF</div>
+        </div>
+      </div>
+
+      <!-- Centre : THROTTLE -->
+      <div class="corners-frame throttle-zone">
+        <span class="c-bl"></span><span class="c-br"></span>
+        <div class="head">▸ THROTTLE %  ◂</div>
+        <div class="big">0</div>
+        <div class="send">▸ ENVOI : 0  ◂</div>
+      </div>
+
+      <!-- Droite : slider vertical -->
+      <div class="vslider-zone">
+        <div class="vslider-labels">
+          <span>+100</span><span>+050</span><span class="mid">+000</span><span>−050</span><span>−100</span>
+        </div>
+        <div class="vslider">
+          <div class="center-h"></div>
+          <div class="thumb"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottombar">
+      <div>▣ MOTEUR  <span style="color:#3DEAF1; font-weight:600;">ACTIF</span></div>
+      <div class="credit">concept by Tom LEBRETON</div>
+      <div class="right">▶ PILOTAGE  v0.7.0</div>
+    </div>
+  </div>
+  <div class="annot">
+    ▸ TopBar : crédit auteur déplacé en BottomBar (centre).<br>
+    ▸ BatteryBadge : largeur fixe 72 px → impossible de se compresser char-par-char.<br>
+    ▸ Tous les textes du TopBar : maxLines=1 + softWrap=false → si overflow, ellipse propre.
+  </div>
+</div>
+
+<!-- ============== SCENARIO B : direction ON ============== -->
+<div class="scenario">
+  <h2>B · DIRECTION ON · CRUISE 42% · BATT 51%</h2>
+  <div class="phone">
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="led"></div>
+        <div class="device-name">HotWheels_V1</div>
+        <div class="device-mac">▸ 88:13:BF:68:F0:FE</div>
+      </div>
+      <div class="topbar-right">
+        <div class="quality-bars"><span></span><span></span><span></span></div>
+        <div class="chip active">▣ CRUISE</div>
+        <div class="icon-btn">☀</div>
+        <div class="icon-btn">⊕</div>
+        <div class="battery">
+          <div class="battery-shell">
+            <div class="body"><div class="fill" style="--bat-pct: 51%;"></div></div>
+            <div class="nub"></div>
+          </div>
+          <div class="battery-text">
+            <div class="pct">51%</div>
+            <div class="v">3,68 V</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hud">
+      <!-- Gauche : slider direction + 3 cartes en ligne -->
+      <div class="left-steering">
+        <div class="steering-slider-zone">
+          <div class="steering-header">
+            <span>▸ DIRECTION</span>
+            <span class="v">▶ DROITE 28</span>
+          </div>
+          <div class="h-slider">
+            <div class="ticks">
+              <span></span><span></span><span></span><span></span><span></span>
+              <span></span><span></span><span></span><span></span><span></span><span></span>
+            </div>
+            <div class="center"></div>
+            <div class="thumb" style="left: 64%;"></div>
+          </div>
+          <div class="h-slider-labels">
+            <span>−100</span><span class="mid">0</span><span>+100</span>
+          </div>
+        </div>
+        <div class="left-3cards">
+          <div class="card">
+            <div class="label">SIGNAL</div>
+            <div class="val">▣ ACTIF</div>
+          </div>
+          <div class="card">
+            <div class="label">PWM SORTIE</div>
+            <div class="pwm" style="font-size:18px;">107<small>/255</small></div>
+          </div>
+          <div class="card accent">
+            <div class="label">DIRECTION</div>
+            <div class="val">▶ AVANT</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="corners-frame throttle-zone">
+        <span class="c-bl"></span><span class="c-br"></span>
+        <div class="head">▸ THROTTLE %  ◂</div>
+        <div class="big">42</div>
+        <div class="send">▸ ENVOI : −42  ◂</div>
+      </div>
+
+      <div class="vslider-zone">
+        <div class="vslider-labels">
+          <span>+100</span><span>+050</span><span class="mid">+000</span><span>−050</span><span>−100</span>
+        </div>
+        <div class="vslider">
+          <div class="center-h"></div>
+          <div class="thumb" style="top: 29%;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottombar">
+      <div>▣ MOTEUR  <span style="color:#3DEAF1; font-weight:600;">ACTIF</span></div>
+      <div class="credit">concept by Tom LEBRETON</div>
+      <div class="right">▶ PILOTAGE  v0.7.0</div>
+    </div>
+  </div>
+  <div class="annot">
+    ▸ Slider direction : 38 px de hauteur, lisible avec curseur visible et label "DROITE 28".<br>
+    ▸ 3 cartes du bas : grid 1fr/1fr/1fr → strictement même largeur (impossible à dérégler).<br>
+    ▸ CRUISE allumé : chip cyan plein, throttle bloqué à 42 % même doigt levé.
+  </div>
+</div>
+
+<!-- ============== SCENARIO C : batt critique ============== -->
+<div class="scenario">
+  <h2>C · BATT CRITIQUE 0% · BANDEAU + BOUTON BYPASS</h2>
+  <div class="phone">
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="led"></div>
+        <div class="device-name">HotWheels_V1</div>
+        <div class="device-mac">▸ 88:13:BF:68:F0:FE</div>
+      </div>
+      <div class="topbar-right">
+        <div class="quality-bars"><span></span><span></span><span></span></div>
+        <div class="chip">□ CRUISE</div>
+        <div class="icon-btn">☀</div>
+        <div class="icon-btn">⊕</div>
+        <div class="battery critical">
+          <div class="battery-shell">
+            <div class="body"><div class="fill"></div></div>
+            <div class="nub"></div>
+          </div>
+          <div class="battery-text">
+            <div class="pct">0%</div>
+            <div class="v">3,18 V</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="banner">
+      ⚠ BATTERIE FAIBLE — COMMANDES VERROUILLÉES
+      <span style="margin-left: 18px; background: rgba(255,200,80,0.2); border: 1px solid #FFC850; color: #FFC850; padding: 2px 10px; border-radius: 3px; font-weight: 700; cursor: pointer;">↩ BYPASS (rentrer au chargeur)</span>
+    </div>
+
+    <div class="hud">
+      <div class="left-cards">
+        <div class="card accent">
+          <div>
+            <div class="label">DIRECTION</div>
+            <div style="color:rgba(61,234,241,0.5); letter-spacing:6px; font-size:14px;">▶▶▶▶▶</div>
+          </div>
+          <div class="val">■ ARRÊT</div>
+        </div>
+        <div class="card">
+          <div class="label">PWM SORTIE</div>
+          <div class="pwm">0<small>/ 255</small></div>
+        </div>
+        <div class="card">
+          <div class="label">SIGNAL</div>
+          <div class="val" style="color:#FF6E6E;">⚠ COUPÉ</div>
+        </div>
+      </div>
+
+      <div class="corners-frame throttle-zone" style="opacity:0.4;">
+        <span class="c-bl"></span><span class="c-br"></span>
+        <div class="head">▸ THROTTLE %  ◂</div>
+        <div class="big">0</div>
+        <div class="send">▸ ENVOI : 0  ◂</div>
+      </div>
+
+      <div class="vslider-zone" style="opacity:0.4;">
+        <div class="vslider-labels">
+          <span>+100</span><span>+050</span><span class="mid">+000</span><span>−050</span><span>−100</span>
+        </div>
+        <div class="vslider">
+          <div class="center-h"></div>
+          <div class="thumb"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottombar">
+      <div>▣ MOTEUR  <span style="color:#FF6E6E; font-weight:600;">SAFE</span></div>
+      <div class="credit">concept by Tom LEBRETON</div>
+      <div class="right">▶ PILOTAGE  v0.7.0</div>
+    </div>
+  </div>
+  <div class="annot">
+    ▸ Bandeau rouge avec bouton BYPASS jaune intégré (cliquable, envoie BYPASS_BAT:1 au firmware).<br>
+    ▸ La zone throttle/slider passe en opacité 0.4 pour signaler "verrouillé" sans masquer.<br>
+    ▸ BatteryBadge en magenta pour cohérence visuelle avec l'alerte.
+  </div>
+</div>
+
+</body>
+</html>
