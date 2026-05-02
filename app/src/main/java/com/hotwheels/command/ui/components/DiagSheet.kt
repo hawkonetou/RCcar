@@ -37,6 +37,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.hotwheels.command.data.SteeringEnabledStore
 import com.hotwheels.command.data.ThrottleLimitStore
 import com.hotwheels.command.ui.theme.LocalPalette
 import com.hotwheels.command.ui.theme.MonoFamily
@@ -55,6 +56,7 @@ fun DiagSheet(onDismiss: () -> Unit) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val entries by DiagLog.entries.collectAsStateWithLifecycle()
     val throttleLimit by ThrottleLimitStore.limit.collectAsStateWithLifecycle()
+    val steeringEnabled by SteeringEnabledStore.enabled.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
     LaunchedEffect(entries.size) {
         if (entries.isNotEmpty()) listState.scrollToItem(entries.size - 1)
@@ -128,6 +130,46 @@ fun DiagSheet(onDismiss: () -> Unit) {
                     ) {
                         Text(
                             text = "$v %",
+                            color = if (active) palette.accent else palette.textMuted,
+                            fontFamily = MonoFamily,
+                            fontSize = 13.sp,
+                            fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal,
+                            letterSpacing = 1.5.sp
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(10.dp))
+
+            // ------- Option direction (M2)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Text(
+                    text = "▸ DIRECTION (M2)",
+                    color = palette.textMuted,
+                    fontFamily = MonoFamily,
+                    fontSize = 12.sp,
+                    letterSpacing = 2.sp,
+                    fontWeight = FontWeight.Medium
+                )
+                listOf(false to "OFF", true to "ON").forEach { (v, label) ->
+                    val active = v == steeringEnabled
+                    Box(
+                        modifier = Modifier
+                            .border(
+                                if (active) 2.dp else 1.dp,
+                                if (active) palette.accent else palette.accentDim35
+                            )
+                            .background(if (active) palette.panel else palette.surface)
+                            .clickable { SteeringEnabledStore.set(context, v) }
+                            .padding(horizontal = 14.dp, vertical = 8.dp)
+                    ) {
+                        Text(
+                            text = label,
                             color = if (active) palette.accent else palette.textMuted,
                             fontFamily = MonoFamily,
                             fontSize = 13.sp,

@@ -25,8 +25,10 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hotwheels.command.bluetooth.BatteryState
 import com.hotwheels.command.bluetooth.ConnectionState
+import com.hotwheels.command.data.SteeringEnabledStore
 import com.hotwheels.command.ui.components.BatteryBadge
 import com.hotwheels.command.ui.components.BigThrottleNumber
 import com.hotwheels.command.ui.components.ConnectingRing
@@ -37,6 +39,7 @@ import com.hotwheels.command.ui.components.DirectionTriangles
 import com.hotwheels.command.ui.components.LedDot
 import com.hotwheels.command.ui.components.LedState
 import com.hotwheels.command.ui.components.LinkQualityIndicator
+import com.hotwheels.command.ui.components.NeonHorizontalSlider
 import com.hotwheels.command.ui.components.NeonVerticalSlider
 import com.hotwheels.command.ui.components.ScanlineBackground
 import com.hotwheels.command.ui.components.TelemetryCard
@@ -56,7 +59,9 @@ fun DriveScreen(
     val palette = LocalPalette.current
     val enabled = state is ConnectionState.Connected
     var sliderValue by remember { mutableIntStateOf(0) }
+    var steeringValue by remember { mutableIntStateOf(0) }
     var diagOpen by remember { mutableStateOf(false) }
+    val steeringEnabled by SteeringEnabledStore.enabled.collectAsStateWithLifecycle()
 
     val ledState = when (state) {
         is ConnectionState.Connected -> LedState.On
@@ -98,6 +103,8 @@ fun DriveScreen(
             } else {
                 ConnectedHud(
                     sliderValue = sliderValue,
+                    steeringValue = steeringValue,
+                    steeringEnabled = steeringEnabled,
                     enabled = enabled,
                     onSliderChange = {
                         sliderValue = it
@@ -106,6 +113,14 @@ fun DriveScreen(
                     onSliderRelease = {
                         sliderValue = 0
                         viewModel.onSliderReleased()
+                    },
+                    onSteeringChange = {
+                        steeringValue = it
+                        viewModel.onSteeringChange(it)
+                    },
+                    onSteeringRelease = {
+                        steeringValue = 0
+                        viewModel.onSteeringReleased()
                     },
                     modifier = Modifier.weight(1f)
                 )
@@ -180,9 +195,13 @@ private fun TopBar(
 @Composable
 private fun ConnectedHud(
     sliderValue: Int,
+    steeringValue: Int,
+    steeringEnabled: Boolean,
     enabled: Boolean,
     onSliderChange: (Int) -> Unit,
     onSliderRelease: () -> Unit,
+    onSteeringChange: (Int) -> Unit,
+    onSteeringRelease: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val palette = LocalPalette.current
@@ -190,52 +209,64 @@ private fun ConnectedHud(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(
-            modifier = Modifier.width(160.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            TelemetryCard(label = "DIRECTION", accent = true) {
-                DirectionTriangles(motorValue = sliderValue, modifier = Modifier.padding(top = 2.dp))
-                Spacer(Modifier.height(3.dp))
-                Text(
-                    text = if (sliderValue > 0) "▶ AVANT"
-                    else if (sliderValue < 0) "◀ ARRIÈRE"
-                    else "■ ARRÊT",
-                    color = palette.accent,
-                    fontFamily = MonoFamily,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    letterSpacing = 1.sp
-                )
-            }
-            TelemetryCard(label = "PWM SORTIE") {
-                val pwm = (abs(sliderValue) * 255 / 100)
-                Row(verticalAlignment = Alignment.Bottom) {
+        if (steeringEnabled) {
+            // Layout direction : slider horizontal au-dessus, 3 cartes en ligne en bas.
+            SteeringLeftZone(
+                sliderValue = sliderValue,
+                steeringValue = steeringValue,
+                enabled = enabled,
+                onSteeringChange = onSteeringChange,
+                onSteeringRelease = onSteeringRelease,
+                modifier = Modifier.weight(1.1f).fillMaxHeight()
+            )
+        } else {
+            Column(
+                modifier = Modifier.width(160.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                TelemetryCard(label = "DIRECTION", accent = true) {
+                    DirectionTriangles(motorValue = sliderValue, modifier = Modifier.padding(top = 2.dp))
+                    Spacer(Modifier.height(3.dp))
                     Text(
-                        text = pwm.toString(),
+                        text = if (sliderValue > 0) "▶ AVANT"
+                        else if (sliderValue < 0) "◀ ARRIÈRE"
+                        else "■ ARRÊT",
                         color = palette.accent,
-                        fontFamily = DotoFamily,
-                        fontWeight = FontWeight.Black,
-                        fontSize = 26.sp
-                    )
-                    Spacer(Modifier.width(4.dp))
-                    Text(
-                        text = "/ 255",
-                        color = palette.textSubtle,
                         fontFamily = MonoFamily,
-                        fontSize = 12.sp
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 1.sp
                     )
                 }
-            }
-            TelemetryCard(label = "SIGNAL") {
-                Text(
-                    text = if (enabled) "▣ ACTIF" else "▣ INACTIF",
-                    color = palette.accent,
-                    fontFamily = MonoFamily,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    letterSpacing = 1.sp
-                )
+                TelemetryCard(label = "PWM SORTIE") {
+                    val pwm = (abs(sliderValue) * 255 / 100)
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        Text(
+                            text = pwm.toString(),
+                            color = palette.accent,
+                            fontFamily = DotoFamily,
+                            fontWeight = FontWeight.Black,
+                            fontSize = 26.sp
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            text = "/ 255",
+                            color = palette.textSubtle,
+                            fontFamily = MonoFamily,
+                            fontSize = 12.sp
+                        )
+                    }
+                }
+                TelemetryCard(label = "SIGNAL") {
+                    Text(
+                        text = if (enabled) "▣ ACTIF" else "▣ INACTIF",
+                        color = palette.accent,
+                        fontFamily = MonoFamily,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 1.sp
+                    )
+                }
             }
         }
 
@@ -296,6 +327,127 @@ private fun ConnectedHud(
                 onValueChange = onSliderChange,
                 onRelease = onSliderRelease
             )
+        }
+    }
+}
+
+@Composable
+private fun SteeringLeftZone(
+    sliderValue: Int,
+    steeringValue: Int,
+    enabled: Boolean,
+    onSteeringChange: (Int) -> Unit,
+    onSteeringRelease: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val palette = LocalPalette.current
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        // Bandeau slider direction.
+        Column(
+            modifier = Modifier.fillMaxWidth().weight(1f),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "▸ DIRECTION",
+                    color = palette.textMuted,
+                    fontFamily = MonoFamily,
+                    fontSize = 10.sp,
+                    letterSpacing = 2.5.sp
+                )
+                Text(
+                    text = when {
+                        steeringValue > 0 -> "▶ DROITE ${steeringValue}"
+                        steeringValue < 0 -> "◀ GAUCHE ${-steeringValue}"
+                        else -> "■ CENTRE"
+                    },
+                    color = palette.accent,
+                    fontFamily = MonoFamily,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 1.5.sp
+                )
+            }
+            Spacer(Modifier.height(4.dp))
+            NeonHorizontalSlider(
+                value = if (enabled) steeringValue else 0,
+                enabled = enabled,
+                onValueChange = onSteeringChange,
+                onRelease = onSteeringRelease
+            )
+            Spacer(Modifier.height(4.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text("-100", color = palette.textMuted, fontFamily = MonoFamily, fontSize = 9.sp, letterSpacing = 1.sp)
+                Text("0", color = palette.accent, fontFamily = MonoFamily, fontSize = 9.sp, letterSpacing = 1.sp)
+                Text("+100", color = palette.textMuted, fontFamily = MonoFamily, fontSize = 9.sp, letterSpacing = 1.sp)
+            }
+        }
+
+        // 3 cartes telemetrie compactes en ligne.
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Box(modifier = Modifier.weight(1f)) {
+                TelemetryCard(label = "SIGNAL") {
+                    Text(
+                        text = if (enabled) "▣ ACTIF" else "▣ INACTIF",
+                        color = palette.accent,
+                        fontFamily = MonoFamily,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 1.sp
+                    )
+                }
+            }
+            Box(modifier = Modifier.weight(1f)) {
+                TelemetryCard(label = "PWM SORTIE") {
+                    val pwm = (abs(sliderValue) * 255 / 100)
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        Text(
+                            text = pwm.toString(),
+                            color = palette.accent,
+                            fontFamily = DotoFamily,
+                            fontWeight = FontWeight.Black,
+                            fontSize = 22.sp
+                        )
+                        Spacer(Modifier.width(3.dp))
+                        Text(
+                            text = "/ 255",
+                            color = palette.textSubtle,
+                            fontFamily = MonoFamily,
+                            fontSize = 11.sp
+                        )
+                    }
+                }
+            }
+            Box(modifier = Modifier.weight(1.1f)) {
+                TelemetryCard(label = "DIRECTION", accent = true) {
+                    DirectionTriangles(motorValue = sliderValue, modifier = Modifier.padding(top = 2.dp))
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        text = if (sliderValue > 0) "▶ AVANT"
+                        else if (sliderValue < 0) "◀ ARRIÈRE"
+                        else "■ ARRÊT",
+                        color = palette.accent,
+                        fontFamily = MonoFamily,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 1.sp
+                    )
+                }
+            }
         }
     }
 }

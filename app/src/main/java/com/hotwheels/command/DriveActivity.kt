@@ -108,7 +108,10 @@ class DriveActivity : ComponentActivity() {
                 val linkFresh by (service?.linkFreshMs ?: fallbackLink).collectAsState()
 
                 val driveVm = remember {
-                    DriveViewModel(sendValue = { v -> service?.setTargetValue(v) })
+                    DriveViewModel(
+                        sendValue = { v -> service?.setTargetValue(v) },
+                        sendSteering = { v -> service?.setSteeringValue(v) }
+                    )
                 }
                 val selectVm = remember { DeviceSelectionViewModel(applicationContext) }
 

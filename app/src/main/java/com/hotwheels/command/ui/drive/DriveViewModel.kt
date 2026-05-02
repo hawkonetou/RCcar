@@ -5,10 +5,12 @@ import com.hotwheels.command.bluetooth.SppConstants
 import com.hotwheels.command.data.ThrottleLimitStore
 
 class DriveViewModel(
-    private val sendValue: (Int) -> Unit
+    private val sendValue: (Int) -> Unit,
+    private val sendSteering: (Int) -> Unit = {}
 ) : ViewModel() {
 
     private var sliderValue: Int = 0
+    private var steeringValue: Int = 0
 
     fun onSliderValueChange(newValue: Int) {
         val clamped = newValue.coerceIn(SppConstants.MIN_VALUE, SppConstants.MAX_VALUE)
@@ -23,6 +25,18 @@ class DriveViewModel(
     fun onSliderReleased() {
         sliderValue = 0
         sendValue(0)
+    }
+
+    fun onSteeringChange(newValue: Int) {
+        val clamped = newValue.coerceIn(SppConstants.MIN_VALUE, SppConstants.MAX_VALUE)
+        if (clamped == steeringValue) return
+        steeringValue = clamped
+        sendSteering(clamped)
+    }
+
+    fun onSteeringReleased() {
+        steeringValue = 0
+        sendSteering(0)
     }
 
     fun currentSlider(): Int = sliderValue

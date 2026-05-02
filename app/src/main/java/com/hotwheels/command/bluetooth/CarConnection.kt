@@ -21,6 +21,9 @@ class CarConnection(
     private val target = AtomicInteger(0)
     private var lastSent: Int = Int.MIN_VALUE
     private var lastSentNanos: Long = Long.MIN_VALUE
+    private val steering = AtomicInteger(0)
+    private var lastSteeringSent: Int = Int.MIN_VALUE
+    private var lastSteeringSentNanos: Long = Long.MIN_VALUE
     private var lastPingNanos: Long = Long.MIN_VALUE
     @Volatile private var running = false
     private var senderThread: Thread? = null
@@ -39,6 +42,11 @@ class CarConnection(
     fun setTargetValue(value: Int) {
         val clamped = value.coerceIn(SppConstants.MIN_VALUE, SppConstants.MAX_VALUE)
         target.set(clamped)
+    }
+
+    fun setSteeringValue(value: Int) {
+        val clamped = value.coerceIn(SppConstants.MIN_VALUE, SppConstants.MAX_VALUE)
+        steering.set(clamped)
     }
 
     fun start() {
@@ -65,6 +73,7 @@ class CarConnection(
         readerThread = null
         runCatching {
             outputStream.write("0\n".toByteArray(Charsets.US_ASCII))
+            outputStream.write("M2:0\n".toByteArray(Charsets.US_ASCII))
             outputStream.flush()
         }
     }
@@ -86,6 +95,7 @@ class CarConnection(
         while (running) {
             try {
                 tickOnce()
+                tickSteeringOnce()
                 pingIfDue()
                 refreshLinkFreshness()
             } catch (_: InterruptedException) {
@@ -140,6 +150,22 @@ class CarConnection(
             outputStream.flush()
             lastSent = current
             lastSentNanos = now
+        }
+    }
+
+    private fun tickSteeringOnce() {
+        val now = clockNanos()
+        val current = steering.get()
+        val firstSend = lastSteeringSentNanos == Long.MIN_VALUE
+        val sinceLastMs = if (firstSend) Long.MAX_VALUE else (now - lastSteeringSentNanos) / 1_000_000L
+        val changed = current != lastSteeringSent
+        val heartbeatDue = sinceLastMs >= SppConstants.HEARTBEAT_MS
+        val throttleOk = firstSend || sinceLastMs >= SppConstants.THROTTLE_MIN_MS
+        if ((changed || heartbeatDue || firstSend) && throttleOk) {
+            outputStream.write("M2:$current\n".toByteArray(Charsets.US_ASCII))
+            outputStream.flush()
+            lastSteeringSent = current
+            lastSteeringSentNanos = now
         }
     }
 

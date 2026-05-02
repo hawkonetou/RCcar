@@ -96,7 +96,10 @@ class BluetoothCarService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
-            ACTION_STOP_MOTOR -> connection?.setTargetValue(0)
+            ACTION_STOP_MOTOR -> {
+                connection?.setTargetValue(0)
+                connection?.setSteeringValue(0)
+            }
             ACTION_DISCONNECT -> stopServiceCleanly()
         }
         return START_STICKY
@@ -109,6 +112,10 @@ class BluetoothCarService : Service() {
 
     fun setTargetValue(value: Int) {
         connection?.setTargetValue(value)
+    }
+
+    fun setSteeringValue(value: Int) {
+        connection?.setSteeringValue(value)
     }
 
     fun connect(deviceName: String, macAddress: String) {

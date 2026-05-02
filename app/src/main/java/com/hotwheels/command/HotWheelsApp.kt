@@ -3,6 +3,7 @@ package com.hotwheels.command
 import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import com.hotwheels.command.data.SteeringEnabledStore
 import com.hotwheels.command.data.ThrottleLimitStore
 import com.hotwheels.command.ui.theme.ThemeStore
 import com.hotwheels.command.util.DiagLog
@@ -13,6 +14,7 @@ class HotWheelsApp : Application() {
         DiagLog.init(this)
         ThemeStore.init(this)
         ThrottleLimitStore.init(this)
+        SteeringEnabledStore.init(this)
         DiagLog.log("APP", "onCreate start")
         installCrashHandler()
         try {

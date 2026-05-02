@@ -96,7 +96,8 @@ class CarConnectionTest {
         c.tickForTest()
         out.reset()
         c.stop()
-        assertEquals("0\n", out.toString(Charsets.US_ASCII))
+        // Au stop on coupe les deux canaux : throttle puis direction.
+        assertEquals("0\nM2:0\n", out.toString(Charsets.US_ASCII))
     }
 
     @Test
