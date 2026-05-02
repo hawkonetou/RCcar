@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Logo 2 — preview 144px</title>
+<style>
+  body {
+    margin: 0;
+    background: #02060A;
+    color: #3DEAF1;
+    font-family: 'JetBrains Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 36px;
+    padding: 60px 20px;
+  }
+  h1 {
+    font-size: 12px;
+    letter-spacing: 0.4em;
+    color: rgba(61,234,241,0.5);
+    margin: 0;
+  }
+  .row {
+    display: flex;
+    gap: 60px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  .tile span {
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    color: rgba(61,234,241,0.55);
+  }
+  .frame {
+    background: #000;
+    overflow: hidden;
+    box-shadow: 0 12px 32px -8px rgba(61,234,241,0.18);
+  }
+  .size-144 { width: 144px; height: 144px; }
+  .size-96  { width: 96px;  height: 96px; }
+  .size-48  { width: 48px;  height: 48px; }
+
+  .mask-rounded   { border-radius: 22%; }
+  .mask-circle    { clip-path: circle(50% at 50% 50%); }
+  .mask-squircle  { clip-path: path("M 0,40 Q 0,0 40,0 L 104,0 Q 144,0 144,40 L 144,104 Q 144,144 104,144 L 40,144 Q 0,144 0,104 Z"); }
+
+  /* For sizes != 144, scale the squircle path won't work; use border-radius approximation */
+  .size-96.mask-squircle  { clip-path: none; border-radius: 28%; }
+  .size-48.mask-squircle  { clip-path: none; border-radius: 28%; }
+  .size-96.mask-rounded   { border-radius: 22%; }
+  .size-48.mask-rounded   { border-radius: 22%; }
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+</style>
+</head>
+<body>
+
+<h1>▸ LOGO 2 — APERÇU À TAILLE LAUNCHER ◂</h1>
+
+<div class="row">
+  <div class="tile">
+    <div class="frame size-144 mask-rounded"><img src="logo2-source.png" alt=""></div>
+    <span>144 px · CARRÉ ARRONDI</span>
+  </div>
+  <div class="tile">
+    <div class="frame size-144 mask-circle"><img src="logo2-source.png" alt=""></div>
+    <span>144 px · ROND</span>
+  </div>
+  <div class="tile">
+    <div class="frame size-144 mask-squircle"><img src="logo2-source.png" alt=""></div>
+    <span>144 px · SQUIRCLE</span>
+  </div>
+</div>
+
+<div style="font-size:10px; letter-spacing:0.3em; color:rgba(61,234,241,0.4); margin-top:20px;">▸ COMPARATIF AUTRES TAILLES ◂</div>
+
+<div class="row">
+  <div class="tile">
+    <div class="frame size-96 mask-rounded"><img src="logo2-source.png" alt=""></div>
+    <span>96 px (drawer)</span>
+  </div>
+  <div class="tile">
+    <div class="frame size-48 mask-rounded"><img src="logo2-source.png" alt=""></div>
+    <span>48 px (status bar)</span>
+  </div>
+</div>
+
+</body>
+</html>

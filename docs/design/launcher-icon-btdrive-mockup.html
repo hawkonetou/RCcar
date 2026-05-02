@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>HotWheels Command — directions inspirées BT DRIVE</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Doto:wght@800;900&family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root { --cyan:#00E5FF; --magenta:#FF2DAA; --bg:#050709; }
+  body {
+    font-family:'JetBrains Mono',monospace;
+    background:var(--bg); color:var(--cyan);
+    background-image:
+      radial-gradient(ellipse at top, rgba(0,229,255,0.05), transparent 50%),
+      radial-gradient(ellipse at bottom, rgba(255,45,170,0.025), transparent 60%);
+    background-attachment:fixed;
+  }
+  .doto { font-family:'Doto',monospace; font-weight:900; }
+  .page-h1 {
+    font-family:'Doto',monospace; font-weight:900;
+    font-size:2.5rem; letter-spacing:0.05em;
+    text-shadow:0 0 20px rgba(0,229,255,0.6), 0 0 40px rgba(0,229,255,0.3);
+  }
+  .icon-frame {
+    width:192px; height:192px;
+    background:linear-gradient(135deg,#1a1a1f,#0a0a0e);
+    border-radius:12px; padding:12px;
+    box-shadow:0 12px 32px -8px rgba(0,229,255,0.15);
+  }
+  .mask-circle    { clip-path: circle(50% at 50% 50%); }
+  .mask-squircle  { clip-path: path("M 0,40 Q 0,0 40,0 L 128,0 Q 168,0 168,40 L 168,128 Q 168,168 128,168 L 40,168 Q 0,168 0,128 Z"); }
+  .mask-rounded   { border-radius:32px; overflow:hidden; }
+  .mask-teardrop  { clip-path: path("M 84 0 A 84 84 0 1 1 0 84 L 0 28 Q 0 0 28 0 Z"); }
+  .icon-svg { width:100%; height:100%; display:block; }
+  .label-chip {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:4px 10px;
+    border:1px solid rgba(0,229,255,0.4);
+    border-radius:14px;
+    font-size:0.65rem; letter-spacing:0.2em;
+    background:rgba(0,229,255,0.05);
+  }
+  .signature {
+    color:var(--magenta); opacity:0.8;
+    font-style:italic; font-size:0.65rem; letter-spacing:0.15em;
+    text-shadow:0 0 8px rgba(255,45,170,0.4);
+  }
+  .ref {
+    border:1px dashed rgba(0,229,255,0.25);
+    border-radius:8px;
+    padding:8px 12px;
+    background:rgba(0,229,255,0.03);
+    font-size:0.7rem;
+    color:rgba(0,229,255,0.6);
+    line-height:1.55;
+  }
+</style>
+</head>
+<body class="px-8 py-12">
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<defs>
+  <radialGradient id="bgRadialE" cx="50%" cy="38%" r="75%">
+    <stop offset="0%" stop-color="#0a1722"/>
+    <stop offset="60%" stop-color="#050a10"/>
+    <stop offset="100%" stop-color="#020306"/>
+  </radialGradient>
+  <linearGradient id="cyanFade" x1="0%" y1="0%" x2="100%" y2="0%">
+    <stop offset="0%"   stop-color="#00E5FF" stop-opacity="0"/>
+    <stop offset="50%"  stop-color="#00E5FF" stop-opacity="1"/>
+    <stop offset="100%" stop-color="#00E5FF" stop-opacity="0"/>
+  </linearGradient>
+  <linearGradient id="cyanReflection" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%" stop-color="#00E5FF" stop-opacity="0.55"/>
+    <stop offset="100%" stop-color="#00E5FF" stop-opacity="0"/>
+  </linearGradient>
+  <linearGradient id="chrome" x1="0%" y1="0%" x2="0%" y2="100%">
+    <stop offset="0%"   stop-color="#E0F8FF"/>
+    <stop offset="35%"  stop-color="#62D8FF"/>
+    <stop offset="55%"  stop-color="#1E9DD8"/>
+    <stop offset="100%" stop-color="#0A6E9C"/>
+  </linearGradient>
+  <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+    <feGaussianBlur stdDeviation="1.6" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+  <filter id="bigGlow" x="-50%" y="-50%" width="200%" height="200%">
+    <feGaussianBlur stdDeviation="3" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+
+  <!-- ============ A · WORDMARK "HC" CHROME + UNDERGLOW ============ -->
+  <symbol id="iconA" viewBox="0 0 108 108">
+    <rect width="108" height="108" fill="url(#bgRadialE)"/>
+    <!-- halo radial (echo des phares) -->
+    <circle cx="54" cy="46" r="38" fill="#00E5FF" opacity="0.06"/>
+    <!-- HC initiales chrome bleute, look BT DRIVE -->
+    <g font-family="Doto, monospace" font-weight="900" font-size="46" text-anchor="middle">
+      <!-- aberration magenta -->
+      <text x="52" y="64" fill="#FF2DAA" opacity="0.45" letter-spacing="-2">HC</text>
+      <!-- aberration cyan dim -->
+      <text x="56" y="64" fill="#00E5FF" opacity="0.45" letter-spacing="-2">HC</text>
+      <!-- texte principal chrome -->
+      <text x="54" y="64" fill="url(#chrome)" letter-spacing="-2" filter="url(#bigGlow)">HC</text>
+    </g>
+    <!-- underglow ruban (reflet sol) -->
+    <rect x="14" y="80" width="80" height="3" fill="url(#cyanFade)" filter="url(#glow)"/>
+    <rect x="20" y="86" width="68" height="14" fill="url(#cyanReflection)" opacity="0.5"/>
+    <!-- micro-chevrons motion -->
+    <g stroke="#00E5FF" stroke-width="1.5" stroke-linecap="round" opacity="0.55">
+      <path d="M 14 24 l 5 0"/>
+      <path d="M 89 24 l 5 0"/>
+    </g>
+  </symbol>
+
+  <!-- ============ B · CAR SILHOUETTE 3/4 ============ -->
+  <symbol id="iconB" viewBox="0 0 108 108">
+    <rect width="108" height="108" fill="url(#bgRadialE)"/>
+    <!-- halo route -->
+    <ellipse cx="54" cy="86" rx="42" ry="6" fill="#00E5FF" opacity="0.18" filter="url(#glow)"/>
+    <!-- carrosserie 3/4 stylisee (paths bas-poly) -->
+    <g filter="url(#glow)">
+      <!-- corps principal -->
+      <path d="M 12 64
+               L 22 50
+               Q 30 40 42 38
+               L 70 38
+               Q 84 40 92 52
+               L 96 64
+               L 96 70
+               L 12 70 Z"
+            fill="#0A2B40" stroke="#00E5FF" stroke-width="1.6"/>
+      <!-- pare-brise (surface vitree) -->
+      <path d="M 32 50 L 44 42 L 66 42 L 78 50 Z" fill="#0F4561" opacity="0.85" stroke="#7FE9FF" stroke-width="1"/>
+      <!-- bandeau cyan (capot) -->
+      <path d="M 24 56 L 88 56" stroke="#00E5FF" stroke-width="1.2" opacity="0.9"/>
+      <!-- phares -->
+      <circle cx="20" cy="60" r="3" fill="#E8FAFF" stroke="#00E5FF" stroke-width="0.8"/>
+      <circle cx="20" cy="60" r="1.4" fill="#FFFFFF"/>
+      <!-- jantes -->
+      <circle cx="32" cy="74" r="8" fill="#070C12" stroke="#00E5FF" stroke-width="1.4"/>
+      <circle cx="32" cy="74" r="3" fill="#00E5FF" opacity="0.85"/>
+      <circle cx="78" cy="74" r="8" fill="#070C12" stroke="#00E5FF" stroke-width="1.4"/>
+      <circle cx="78" cy="74" r="3" fill="#00E5FF" opacity="0.85"/>
+    </g>
+    <!-- underglow ruban -->
+    <rect x="16" y="84" width="76" height="2.5" fill="url(#cyanFade)" filter="url(#glow)"/>
+    <rect x="22" y="88" width="64" height="10" fill="url(#cyanReflection)" opacity="0.45"/>
+  </symbol>
+
+  <!-- ============ C · ROUE FRONTALE + CHEVRONS VITESSE ============ -->
+  <symbol id="iconC" viewBox="0 0 108 108">
+    <rect width="108" height="108" fill="url(#bgRadialE)"/>
+    <!-- chevrons de vitesse derriere -->
+    <g stroke="#00E5FF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.35">
+      <path d="M 14 38 L 26 54 L 14 70"/>
+      <path d="M 26 38 L 38 54 L 26 70"/>
+    </g>
+    <g stroke="#00E5FF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.7" filter="url(#glow)">
+      <path d="M 38 38 L 50 54 L 38 70"/>
+    </g>
+    <!-- jante centrale (vue frontale) -->
+    <g filter="url(#glow)">
+      <circle cx="72" cy="54" r="26" fill="#070C12" stroke="#00E5FF" stroke-width="2"/>
+      <circle cx="72" cy="54" r="20" fill="none" stroke="#00E5FF" stroke-width="0.8" opacity="0.4"/>
+      <!-- 5 spokes -->
+      <g stroke="#00E5FF" stroke-width="2.2" stroke-linecap="round">
+        <line x1="72" y1="54" x2="72" y2="32"/>
+        <line x1="72" y1="54" x2="92" y2="42"/>
+        <line x1="72" y1="54" x2="84" y2="74"/>
+        <line x1="72" y1="54" x2="60" y2="74"/>
+        <line x1="72" y1="54" x2="52" y2="42"/>
+      </g>
+      <circle cx="72" cy="54" r="5" fill="#FF2DAA"/>
+      <circle cx="72" cy="54" r="2" fill="#FFFFFF"/>
+    </g>
+    <!-- underglow -->
+    <rect x="14" y="86" width="80" height="2.5" fill="url(#cyanFade)" filter="url(#glow)"/>
+  </symbol>
+
+  <!-- ============ E · ROUE FRONTALE AVEC COMPTEUR INTÉGRÉ ============ -->
+  <symbol id="iconE" viewBox="0 0 108 108">
+    <rect width="108" height="108" fill="url(#bgRadialE)"/>
+
+    <!-- halo radial -->
+    <circle cx="54" cy="54" r="46" fill="#00E5FF" opacity="0.06"/>
+
+    <g transform="translate(54,56)" filter="url(#glow)">
+
+      <!-- ====== PNEU (tire exterieur) ====== -->
+      <circle r="44" fill="#070C12" stroke="#00E5FF" stroke-width="2"/>
+
+      <!-- crampons / tread marks autour du pneu -->
+      <g stroke="#00E5FF" stroke-width="1" opacity="0.5">
+        <line x1="0" y1="-44" x2="0" y2="-40"/>
+        <line x1="16.84" y1="-40.65" x2="15.31" y2="-36.96"/>
+        <line x1="31.11" y1="-31.11" x2="28.28" y2="-28.28"/>
+        <line x1="40.65" y1="-16.84" x2="36.96" y2="-15.31"/>
+        <line x1="44" y1="0" x2="40" y2="0"/>
+        <line x1="40.65" y1="16.84" x2="36.96" y2="15.31"/>
+        <line x1="31.11" y1="31.11" x2="28.28" y2="28.28"/>
+        <line x1="16.84" y1="40.65" x2="15.31" y2="36.96"/>
+        <line x1="0" y1="44" x2="0" y2="40"/>
+        <line x1="-16.84" y1="40.65" x2="-15.31" y2="36.96"/>
+        <line x1="-31.11" y1="31.11" x2="-28.28" y2="28.28"/>
+        <line x1="-40.65" y1="16.84" x2="-36.96" y2="15.31"/>
+        <line x1="-44" y1="0" x2="-40" y2="0"/>
+        <line x1="-40.65" y1="-16.84" x2="-36.96" y2="-15.31"/>
+        <line x1="-31.11" y1="-31.11" x2="-28.28" y2="-28.28"/>
+        <line x1="-16.84" y1="-40.65" x2="-15.31" y2="-36.96"/>
+      </g>
+
+      <!-- jante interieure (rim edge) -->
+      <circle r="34" fill="none" stroke="#00E5FF" stroke-width="1.4" opacity="0.7"/>
+
+      <!-- ====== COMPTEUR — ARC HAUT 180° ====== -->
+      <!-- background half-arc (top) -->
+      <path d="M -28 0 A 28 28 0 0 1 28 0"
+            fill="none" stroke="#00E5FF" stroke-width="2" opacity="0.2" stroke-linecap="round"/>
+      <!-- arc actif chrome 0 -> 75% -->
+      <path d="M -28 0 A 28 28 0 0 1 19.8 -19.8"
+            fill="none" stroke="url(#chrome)" stroke-width="3" stroke-linecap="round"/>
+
+      <!-- ticks majeurs (5 positions, vers l'exterieur de l'arc) -->
+      <g stroke="#00E5FF" stroke-width="1.6" stroke-linecap="round">
+        <line x1="-28" y1="0" x2="-32" y2="0"/>
+        <line x1="-19.8" y1="-19.8" x2="-22.6" y2="-22.6"/>
+        <line x1="0" y1="-28" x2="0" y2="-32"/>
+        <line x1="19.8" y1="-19.8" x2="22.6" y2="-22.6"/>
+        <line x1="28" y1="0" x2="32" y2="0"/>
+      </g>
+
+      <!-- ticks mineurs -->
+      <g stroke="#00E5FF" stroke-width="0.8" stroke-linecap="round" opacity="0.5">
+        <line x1="-25.86" y1="-10.71" x2="-29.6" y2="-12.26"/>
+        <line x1="-10.71" y1="-25.86" x2="-12.26" y2="-29.6"/>
+        <line x1="10.71" y1="-25.86" x2="12.26" y2="-29.6"/>
+        <line x1="25.86" y1="-10.71" x2="29.6" y2="-12.26"/>
+      </g>
+
+      <!-- ====== SPOKES — moitie basse (3 rayons de jante) ====== -->
+      <g stroke="#00E5FF" stroke-width="2.2" stroke-linecap="round">
+        <line x1="0" y1="6" x2="-22" y2="22"/>
+        <line x1="0" y1="6" x2="0" y2="32"/>
+        <line x1="0" y1="6" x2="22" y2="22"/>
+      </g>
+      <!-- chiffre %  -->
+      <text x="0" y="-10" text-anchor="middle"
+            font-family="Doto, monospace" font-weight="900" font-size="11"
+            fill="#00E5FF" opacity="0.9" letter-spacing="-0.5">75</text>
+
+      <!-- ====== AIGUILLE — pointe vers 75% (NE) ====== -->
+      <line x1="0" y1="0" x2="19.8" y2="-19.8"
+            stroke="#FF2DAA" stroke-width="2.6" stroke-linecap="round" filter="url(#glow)"/>
+      <line x1="0" y1="0" x2="19.8" y2="-19.8"
+            stroke="#FFFFFF" stroke-width="0.9" stroke-linecap="round" opacity="0.75"/>
+
+      <!-- moyeu central — pivot aiguille + jante -->
+      <circle r="6" fill="#070C12" stroke="#00E5FF" stroke-width="1.6"/>
+      <circle r="3" fill="#FF2DAA"/>
+      <circle r="1" fill="#FFFFFF"/>
+    </g>
+
+    <!-- underglow ruban -->
+    <rect x="14" y="100" width="80" height="2" fill="url(#cyanFade)" filter="url(#glow)"/>
+  </symbol>
+
+  <!-- ============ D · HEADLIGHT TWIN BEAM + HC ============ -->
+  <symbol id="iconD" viewBox="0 0 108 108">
+    <rect width="108" height="108" fill="url(#bgRadialE)"/>
+    <!-- faisceau gauche -->
+    <path d="M 18 22 L 50 50 L 50 58 L 18 30 Z" fill="#00E5FF" opacity="0.18"/>
+    <path d="M 18 22 L 50 50 L 50 54 L 18 26 Z" fill="#00E5FF" opacity="0.55" filter="url(#glow)"/>
+    <!-- faisceau droit -->
+    <path d="M 90 22 L 58 50 L 58 58 L 90 30 Z" fill="#00E5FF" opacity="0.18"/>
+    <path d="M 90 22 L 58 50 L 58 54 L 90 26 Z" fill="#00E5FF" opacity="0.55" filter="url(#glow)"/>
+    <!-- 2 phares cibles -->
+    <circle cx="20" cy="24" r="5" fill="#E8FAFF" stroke="#00E5FF" stroke-width="1.4" filter="url(#glow)"/>
+    <circle cx="88" cy="24" r="5" fill="#E8FAFF" stroke="#00E5FF" stroke-width="1.4" filter="url(#glow)"/>
+    <circle cx="20" cy="24" r="2" fill="#FFFFFF"/>
+    <circle cx="88" cy="24" r="2" fill="#FFFFFF"/>
+    <!-- texte HC entre les faisceaux -->
+    <g font-family="Doto, monospace" font-weight="900" font-size="34" text-anchor="middle">
+      <text x="56" y="78" fill="#FF2DAA" opacity="0.45" letter-spacing="-1">HC</text>
+      <text x="52" y="78" fill="url(#chrome)" letter-spacing="-1" filter="url(#bigGlow)">HC</text>
+    </g>
+    <!-- underglow ruban -->
+    <rect x="14" y="88" width="80" height="2.5" fill="url(#cyanFade)" filter="url(#glow)"/>
+  </symbol>
+</defs>
+</svg>
+
+<!-- ============ HEADER ============ -->
+<header class="text-center mb-12">
+  <div class="text-[10px] tracking-[0.4em] text-[#00E5FF]/40 mb-3">▸ MOCKUP — DIRECTION ICÔNE LAUNCHER (inspiration BT DRIVE) ◂</div>
+  <h1 class="page-h1">HOTWHEELS COMMAND</h1>
+  <div class="text-xs tracking-[0.3em] text-[#00E5FF]/30 mt-3">4 NOUVELLES OPTIONS · ADAPTIVE ICON · viewBox 108×108</div>
+  <div class="mt-3 inline-flex items-center gap-2 text-[10px] tracking-[0.4em]">
+    <span class="h-px w-8 bg-[#FF2DAA]/40"></span>
+    <span class="signature">concept by Tom LEBRETON</span>
+    <span class="h-px w-8 bg-[#FF2DAA]/40"></span>
+  </div>
+</header>
+
+<div class="max-w-[1300px] mx-auto space-y-12">
+
+  <!-- moodboard -->
+  <div class="ref">
+    <strong>RÉF VISUELLE :</strong> Peugeot 206 race car, underglow cyan néon, reflet sol, halo radial, wordmark "BT DRIVE" chrome. <br>
+    <strong>EXTRACTIONS :</strong> ruban d'underglow, chrome bleuté à dégradé, halo radial, faisceaux de phares, chevrons de vitesse.
+  </div>
+
+  <!-- ====== A ====== -->
+  <section>
+    <div class="flex items-center gap-3 mb-4">
+      <span class="label-chip">OPTION A · WORDMARK HC CHROME</span>
+      <span class="text-xs text-[#00E5FF]/60">Initiales Doto chrome dégradé + underglow ruban — la plus lisible à 48dp</span>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
+      <div class="flex flex-col items-center gap-2"><div class="icon-frame"><div class="mask-rounded h-full"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconA"/></svg></div></div><span class="text-[9px] tracking-widest text-[#00E5FF]/60">CARRÉ ARRONDI</span></div>
+      <div class="flex flex-col items-center gap-2"><div class="icon-frame"><div class="mask-circle h-full"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconA"/></svg></div></div><span class="text-[9px] tracking-widest text-[#00E5FF]/60">ROND</span></div>
+      <div class="flex flex-col items-center gap-2"><div class="icon-frame"><div class="mask-squircle h-full"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconA"/></svg></div></div><span class="text-[9px] tracking-widest text-[#00E5FF]/60">SQUIRCLE</span></div>
+      <div class="flex flex-col items-center gap-2"><div class="icon-frame"><div class="mask-teardrop h-full"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconA"/></svg></div></div><span class="text-[9px] tracking-widest text-[#00E5FF]/60">GOUTTE</span></div>
+    </div>
+    <div class="mt-3 text-[10px] text-[#00E5FF]/50 tracking-wider">+ Très lisible · - Évoque moins explicitement la voiture</div>
+  </section>
+
+  <!-- ====== B ====== -->
+  <section>
+    <div class="flex items-center gap-3 mb-4">
+      <span class="label-chip">OPTION B · CAR SILHOUETTE 3/4</span>
+      <span class="text-xs text-[#00E5FF]/60">Voiture stylisée vue 3/4 + underglow — référence directe à la photo</span>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
+      <div class="flex flex-col items-center gap-2"><div class="icon-frame"><div class="mask-rounded h-full"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconB"/></svg></div></div><span class="text-[9px] tracking-widest text-[#00E5FF]/60">CARRÉ ARRONDI</span></div>
+      <div class="flex flex-col items-center gap-2"><div class="icon-frame"><div class="mask-circle h-full"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconB"/></svg></div></div><span class="text-[9px] tracking-widest text-[#00E5FF]/60">ROND</span></div>
+      <div class="flex flex-col items-center gap-2"><div class="icon-frame"><div class="mask-squircle h-full"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconB"/></svg></div></div><span class="text-[9px] tracking-widest text-[#00E5FF]/60">SQUIRCLE</span></div>
+      <div class="flex flex-col items-center gap-2"><div class="icon-frame"><div class="mask-teardrop h-full"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconB"/></svg></div></div><span class="text-[9px] tracking-widest text-[#00E5FF]/60">GOUTTE</span></div>
+    </div>
+    <div class="mt-3 text-[10px] text-[#00E5FF]/50 tracking-wider">+ Reconnaissable instantanément · - Détails fragiles à 48dp</div>
+  </section>
+
+  <!-- ====== C ====== -->
+  <section>
+    <div class="flex items-center gap-3 mb-4">
+      <span class="label-chip">OPTION C · ROUE + CHEVRONS</span>
+      <span class="text-xs text-[#00E5FF]/60">Jante 5 branches frontale + lignes de vitesse — vibe HotWheels jouet</span>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
+      <div class="flex flex-col items-center gap-2"><div class="icon-frame"><div class="mask-rounded h-full"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconC"/></svg></div></div><span class="text-[9px] tracking-widest text-[#00E5FF]/60">CARRÉ ARRONDI</span></div>
+      <div class="flex flex-col items-center gap-2"><div class="icon-frame"><div class="mask-circle h-full"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconC"/></svg></div></div><span class="text-[9px] tracking-widest text-[#00E5FF]/60">ROND</span></div>
+      <div class="flex flex-col items-center gap-2"><div class="icon-frame"><div class="mask-squircle h-full"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconC"/></svg></div></div><span class="text-[9px] tracking-widest text-[#00E5FF]/60">SQUIRCLE</span></div>
+      <div class="flex flex-col items-center gap-2"><div class="icon-frame"><div class="mask-teardrop h-full"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconC"/></svg></div></div><span class="text-[9px] tracking-widest text-[#00E5FF]/60">GOUTTE</span></div>
+    </div>
+    <div class="mt-3 text-[10px] text-[#00E5FF]/50 tracking-wider">+ Géométrique fort · - Moins direct sur l'esthétique BT DRIVE</div>
+  </section>
+
+  <!-- ====== D ====== -->
+  <section>
+    <div class="flex items-center gap-3 mb-4">
+      <span class="label-chip">OPTION D · TWIN HEADLIGHT BEAM + HC</span>
+      <span class="text-xs text-[#00E5FF]/60">Deux faisceaux de phares + monogramme — capture l'instant "feux allumés"</span>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
+      <div class="flex flex-col items-center gap-2"><div class="icon-frame"><div class="mask-rounded h-full"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconD"/></svg></div></div><span class="text-[9px] tracking-widest text-[#00E5FF]/60">CARRÉ ARRONDI</span></div>
+      <div class="flex flex-col items-center gap-2"><div class="icon-frame"><div class="mask-circle h-full"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconD"/></svg></div></div><span class="text-[9px] tracking-widest text-[#00E5FF]/60">ROND</span></div>
+      <div class="flex flex-col items-center gap-2"><div class="icon-frame"><div class="mask-squircle h-full"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconD"/></svg></div></div><span class="text-[9px] tracking-widest text-[#00E5FF]/60">SQUIRCLE</span></div>
+      <div class="flex flex-col items-center gap-2"><div class="icon-frame"><div class="mask-teardrop h-full"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconD"/></svg></div></div><span class="text-[9px] tracking-widest text-[#00E5FF]/60">GOUTTE</span></div>
+    </div>
+    <div class="mt-3 text-[10px] text-[#00E5FF]/50 tracking-wider">+ Atmosphère "phares dans la nuit" · - Composition asymétrique haute</div>
+  </section>
+
+  <!-- ====== E ====== -->
+  <section class="border-t border-[#FF2DAA]/20 pt-8">
+    <div class="flex items-center gap-3 mb-4">
+      <span class="label-chip" style="border-color:rgba(255,45,170,0.5); background:rgba(255,45,170,0.08); color:#FF2DAA;">★ OPTION E · ROUE AVEC COMPTEUR INTÉGRÉ</span>
+      <span class="text-xs text-[#FF2DAA]/80">Une roue frontale unique : pneu + crampons à l'extérieur, demi-cadran HUD dans la moitié haute, 3 rayons dans la moitié basse, aiguille magenta + chiffre %</span>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-center">
+      <div class="flex flex-col items-center gap-2"><div class="icon-frame" style="box-shadow:0 12px 32px -8px rgba(255,45,170,0.2);"><div class="mask-rounded h-full"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconE"/></svg></div></div><span class="text-[9px] tracking-widest text-[#FF2DAA]/70">CARRÉ ARRONDI</span></div>
+      <div class="flex flex-col items-center gap-2"><div class="icon-frame" style="box-shadow:0 12px 32px -8px rgba(255,45,170,0.2);"><div class="mask-circle h-full"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconE"/></svg></div></div><span class="text-[9px] tracking-widest text-[#FF2DAA]/70">ROND</span></div>
+      <div class="flex flex-col items-center gap-2"><div class="icon-frame" style="box-shadow:0 12px 32px -8px rgba(255,45,170,0.2);"><div class="mask-squircle h-full"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconE"/></svg></div></div><span class="text-[9px] tracking-widest text-[#FF2DAA]/70">SQUIRCLE</span></div>
+      <div class="flex flex-col items-center gap-2"><div class="icon-frame" style="box-shadow:0 12px 32px -8px rgba(255,45,170,0.2);"><div class="mask-teardrop h-full"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconE"/></svg></div></div><span class="text-[9px] tracking-widest text-[#FF2DAA]/70">GOUTTE</span></div>
+    </div>
+    <div class="mt-3 text-[10px] text-[#FF2DAA]/70 tracking-wider">+ Mark unique cohérent (objet rond = bonne tenue dans toutes les formes de masque) · + Raconte le pilotage en un seul geste · - Densité d'info à vérifier à 48 px</div>
+  </section>
+
+  <!-- ====== Comparatif tailles reelles ====== -->
+  <section class="border-t border-[#00E5FF]/15 pt-8 mt-12">
+    <div class="text-center text-[10px] tracking-[0.4em] text-[#00E5FF]/40 mb-6">▸ COMPARATIF TAILLES RÉELLES — 96px (drawer) · 48px (status bar) ◂</div>
+    <div class="grid grid-cols-5 gap-6">
+      <div class="flex flex-col items-center gap-3">
+        <div style="width:96px;height:96px;border-radius:18px;overflow:hidden;background:#0a0a0e;"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconA"/></svg></div>
+        <div style="width:48px;height:48px;border-radius:9px;overflow:hidden;background:#0a0a0e;"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconA"/></svg></div>
+        <span class="text-[10px] tracking-widest text-[#00E5FF]/60">A · HC CHROME</span>
+      </div>
+      <div class="flex flex-col items-center gap-3">
+        <div style="width:96px;height:96px;border-radius:18px;overflow:hidden;background:#0a0a0e;"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconB"/></svg></div>
+        <div style="width:48px;height:48px;border-radius:9px;overflow:hidden;background:#0a0a0e;"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconB"/></svg></div>
+        <span class="text-[10px] tracking-widest text-[#00E5FF]/60">B · CAR 3/4</span>
+      </div>
+      <div class="flex flex-col items-center gap-3">
+        <div style="width:96px;height:96px;border-radius:18px;overflow:hidden;background:#0a0a0e;"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconC"/></svg></div>
+        <div style="width:48px;height:48px;border-radius:9px;overflow:hidden;background:#0a0a0e;"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconC"/></svg></div>
+        <span class="text-[10px] tracking-widest text-[#00E5FF]/60">C · ROUE</span>
+      </div>
+      <div class="flex flex-col items-center gap-3">
+        <div style="width:96px;height:96px;border-radius:18px;overflow:hidden;background:#0a0a0e;"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconD"/></svg></div>
+        <div style="width:48px;height:48px;border-radius:9px;overflow:hidden;background:#0a0a0e;"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconD"/></svg></div>
+        <span class="text-[10px] tracking-widest text-[#00E5FF]/60">D · TWIN BEAM</span>
+      </div>
+      <div class="flex flex-col items-center gap-3">
+        <div style="width:96px;height:96px;border-radius:18px;overflow:hidden;background:#0a0a0e;box-shadow:0 0 24px -6px rgba(255,45,170,0.45);"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconE"/></svg></div>
+        <div style="width:48px;height:48px;border-radius:9px;overflow:hidden;background:#0a0a0e;box-shadow:0 0 12px -3px rgba(255,45,170,0.45);"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconE"/></svg></div>
+        <span class="text-[10px] tracking-widest text-[#FF2DAA]/80">★ E · ROUE+COMPTEUR</span>
+      </div>
+    </div>
+  </section>
+</div>
+
+<footer class="mt-16 text-center">
+  <div class="inline-flex items-center gap-2 text-[10px] tracking-[0.4em]">
+    <span class="h-px w-8 bg-[#FF2DAA]/40"></span>
+    <span class="signature">designed by Tom LEBRETON</span>
+    <span class="h-px w-8 bg-[#FF2DAA]/40"></span>
+  </div>
+</footer>
+
+</body>
+</html>

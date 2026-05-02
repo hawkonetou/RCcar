@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>HotWheels Command — adaptations cercle néon + 206 RX</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Doto:wght@800;900&family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root { --cyan:#3DEAF1; --magenta:#FF2DAA; --bg:#02060A; }
+  body {
+    font-family:'JetBrains Mono',monospace;
+    background:var(--bg); color:var(--cyan);
+    background-image:
+      radial-gradient(ellipse at top, rgba(61,234,241,0.05), transparent 50%),
+      radial-gradient(ellipse at bottom, rgba(255,45,170,0.025), transparent 60%);
+    background-attachment:fixed;
+  }
+  .doto { font-family:'Doto',monospace; font-weight:900; }
+  .page-h1 {
+    font-family:'Doto',monospace; font-weight:900;
+    font-size:2.5rem; letter-spacing:0.05em;
+    text-shadow:0 0 20px rgba(61,234,241,0.6), 0 0 40px rgba(61,234,241,0.3);
+  }
+  .icon-frame {
+    width:200px; height:200px;
+    background:#000;
+    border-radius:14px; padding:8px;
+    box-shadow:0 14px 36px -10px rgba(61,234,241,0.18);
+  }
+  .mask-circle    { clip-path: circle(50% at 50% 50%); }
+  .mask-squircle  { clip-path: path("M 0,42 Q 0,0 42,0 L 142,0 Q 184,0 184,42 L 184,142 Q 184,184 142,184 L 42,184 Q 0,184 0,142 Z"); }
+  .mask-rounded   { border-radius:34px; overflow:hidden; }
+  .icon-svg { width:100%; height:100%; display:block; }
+  .label-chip {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:4px 10px;
+    border:1px solid rgba(61,234,241,0.4);
+    border-radius:14px;
+    font-size:0.65rem; letter-spacing:0.2em;
+    background:rgba(61,234,241,0.05);
+  }
+  .signature {
+    color:var(--magenta); opacity:0.8;
+    font-style:italic; font-size:0.65rem; letter-spacing:0.15em;
+    text-shadow:0 0 8px rgba(255,45,170,0.4);
+  }
+</style>
+</head>
+<body class="px-8 py-12">
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<defs>
+  <radialGradient id="bgRadialN" cx="50%" cy="45%" r="80%">
+    <stop offset="0%"  stop-color="#0A1418"/>
+    <stop offset="60%" stop-color="#02080C"/>
+    <stop offset="100%" stop-color="#000000"/>
+  </radialGradient>
+
+  <filter id="glowS" x="-50%" y="-50%" width="200%" height="200%">
+    <feGaussianBlur stdDeviation="0.9" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+  <filter id="glowM" x="-50%" y="-50%" width="200%" height="200%">
+    <feGaussianBlur stdDeviation="1.6" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+  <filter id="glowL" x="-50%" y="-50%" width="200%" height="200%">
+    <feGaussianBlur stdDeviation="2.6" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+
+  <!-- ============ SYMBOL : silhouette voiture 3/4 (Peugeot 206 RX style) ============ -->
+  <symbol id="car206" viewBox="-50 -22 100 44" overflow="visible">
+    <!-- carrosserie (chassis) -->
+    <path d="M -42 14
+             L -42 10
+             Q -42 5 -38 4
+             L -36 -2
+             Q -34 -8 -28 -10
+             L -22 -14
+             Q -16 -16 -8 -16
+             L 14 -16
+             Q 22 -15 28 -10
+             L 32 -8
+             Q 38 -4 40 0
+             L 42 6
+             Q 43 10 42 14
+             Z"
+          fill="#1A2A36" stroke="#3DEAF1" stroke-width="1.3" stroke-linejoin="round" filter="url(#glowS)"/>
+
+    <!-- pare-brise + vitres -->
+    <path d="M -22 -10 L -8 -14 L 14 -14 L 26 -10 L 22 -3 L -16 -3 Z"
+          fill="#0F1B25" stroke="#3DEAF1" stroke-width="0.7" opacity="0.9"/>
+    <!-- montant central -->
+    <line x1="2" y1="-13.4" x2="2" y2="-3" stroke="#3DEAF1" stroke-width="0.5" opacity="0.55"/>
+
+    <!-- ligne de capot -->
+    <line x1="-38" y1="2" x2="-30" y2="-4" stroke="#3DEAF1" stroke-width="0.5" opacity="0.6"/>
+    <!-- prise d'air capot -->
+    <path d="M -32 -2 L -24 -5 L -22 -3 L -30 0 Z"
+          fill="#0A141A" stroke="#3DEAF1" stroke-width="0.5" opacity="0.7"/>
+
+    <!-- phares (2) -->
+    <path d="M -40 4 L -36 2 L -32 4 L -36 6 Z" fill="#9CF0F4" stroke="#3DEAF1" stroke-width="0.4" filter="url(#glowS)"/>
+    <!-- grille / calandre -->
+    <rect x="-37" y="9" width="10" height="3" rx="0.5" fill="#0A141A" stroke="#3DEAF1" stroke-width="0.4"/>
+    <line x1="-32" y1="9.4" x2="-32" y2="11.6" stroke="#3DEAF1" stroke-width="0.3"/>
+
+    <!-- aileron arriere -->
+    <path d="M 26 -9 L 36 -9 L 40 -7 L 36 -7 L 28 -7 Z"
+          fill="#1A2A36" stroke="#3DEAF1" stroke-width="0.6"/>
+
+    <!-- ligne de cote -->
+    <path d="M -30 4 L 32 4" stroke="#3DEAF1" stroke-width="0.5" opacity="0.6"/>
+
+    <!-- jupe / underglow accent -->
+    <path d="M -38 12 L 36 12" stroke="#3DEAF1" stroke-width="0.7" opacity="0.85"/>
+
+    <!-- Roue avant (gauche) -->
+    <g transform="translate(-25,14)">
+      <ellipse rx="8" ry="7" fill="#020608" stroke="#3DEAF1" stroke-width="1.1"/>
+      <ellipse rx="3.5" ry="3" fill="none" stroke="#3DEAF1" stroke-width="0.7" opacity="0.85"/>
+      <line x1="0" y1="-3" x2="0" y2="3" stroke="#3DEAF1" stroke-width="0.5"/>
+      <line x1="-3.4" y1="0" x2="3.4" y2="0" stroke="#3DEAF1" stroke-width="0.5"/>
+    </g>
+    <!-- Roue arriere (droite) -->
+    <g transform="translate(25,14)">
+      <ellipse rx="7.5" ry="6.4" fill="#020608" stroke="#3DEAF1" stroke-width="1"/>
+      <ellipse rx="3" ry="2.6" fill="none" stroke="#3DEAF1" stroke-width="0.6" opacity="0.85"/>
+    </g>
+  </symbol>
+
+  <!-- ============ F1 · LITERAL — cercle néon + 206 RX (sans texte) ============ -->
+  <symbol id="iconF1" viewBox="0 0 108 108">
+    <rect width="108" height="108" fill="url(#bgRadialN)"/>
+
+    <!-- Cercle neon principal -->
+    <circle cx="54" cy="50" r="40" fill="none" stroke="#3DEAF1" stroke-width="2.4" filter="url(#glowM)"/>
+    <circle cx="54" cy="50" r="40" fill="none" stroke="#9CF0F4" stroke-width="0.8" opacity="0.9"/>
+
+    <!-- voiture (3/4) au centre du cercle -->
+    <g transform="translate(54,52) scale(0.78)">
+      <use href="#car206"/>
+    </g>
+
+    <!-- demi-cercle reflet (ombre miroir) -->
+    <path d="M 22 86 Q 54 100 86 86"
+          fill="none" stroke="#3DEAF1" stroke-width="1.6" opacity="0.55" filter="url(#glowM)"/>
+    <path d="M 28 90 Q 54 100 80 90"
+          fill="none" stroke="#3DEAF1" stroke-width="0.8" opacity="0.35"/>
+  </symbol>
+
+  <!-- ============ F2 · LITERAL + monogramme HW (compromis lisibilité) ============ -->
+  <symbol id="iconF2" viewBox="0 0 108 108">
+    <rect width="108" height="108" fill="url(#bgRadialN)"/>
+
+    <circle cx="54" cy="50" r="40" fill="none" stroke="#3DEAF1" stroke-width="2.4" filter="url(#glowM)"/>
+    <circle cx="54" cy="50" r="40" fill="none" stroke="#9CF0F4" stroke-width="0.8" opacity="0.9"/>
+
+    <!-- monogramme HW Doto en haut du cercle (remplace "HOTWHEELS COMMAND") -->
+    <g font-family="Doto, monospace" font-weight="900" font-size="14" text-anchor="middle">
+      <text x="54" y="32" fill="#3DEAF1" filter="url(#glowM)" letter-spacing="0">HW</text>
+    </g>
+
+    <!-- voiture decalée légèrement plus bas -->
+    <g transform="translate(54,62) scale(0.68)">
+      <use href="#car206"/>
+    </g>
+
+    <path d="M 22 86 Q 54 99 86 86"
+          fill="none" stroke="#3DEAF1" stroke-width="1.6" opacity="0.55" filter="url(#glowM)"/>
+    <path d="M 30 90 Q 54 98 78 90"
+          fill="none" stroke="#3DEAF1" stroke-width="0.8" opacity="0.35"/>
+  </symbol>
+
+  <!-- ============ F3 · MAXIMAL NEON BORDLESS — voiture en stroke pur ============ -->
+  <symbol id="iconF3" viewBox="0 0 108 108">
+    <rect width="108" height="108" fill="url(#bgRadialN)"/>
+
+    <!-- Cercle neon double (bord externe + halo cyan) -->
+    <circle cx="54" cy="54" r="46" fill="none" stroke="#3DEAF1" stroke-width="0.5" opacity="0.4" filter="url(#glowL)"/>
+    <circle cx="54" cy="54" r="42" fill="none" stroke="#3DEAF1" stroke-width="3" filter="url(#glowL)"/>
+    <circle cx="54" cy="54" r="42" fill="none" stroke="#FFFFFF" stroke-width="0.6" opacity="0.85"/>
+
+    <!-- voiture stroke seulement (pas de remplissage de carrosserie) -->
+    <g transform="translate(54,55) scale(0.78)">
+      <!-- carrosserie en stroke pur -->
+      <path d="M -42 14
+               L -42 10
+               Q -42 5 -38 4
+               L -36 -2
+               Q -34 -8 -28 -10
+               L -22 -14
+               Q -16 -16 -8 -16
+               L 14 -16
+               Q 22 -15 28 -10
+               L 32 -8
+               Q 38 -4 40 0
+               L 42 6
+               Q 43 10 42 14"
+            fill="none" stroke="#3DEAF1" stroke-width="1.6" stroke-linejoin="round" filter="url(#glowM)"/>
+
+      <path d="M -22 -10 L -8 -14 L 14 -14 L 26 -10"
+            fill="none" stroke="#3DEAF1" stroke-width="1.2" filter="url(#glowS)"/>
+      <line x1="-30" y1="4" x2="32" y2="4" stroke="#3DEAF1" stroke-width="0.7" opacity="0.7"/>
+      <line x1="-38" y1="12" x2="36" y2="12" stroke="#3DEAF1" stroke-width="0.9" opacity="0.85" filter="url(#glowS)"/>
+
+      <!-- phares -->
+      <path d="M -40 4 L -36 2 L -32 4" fill="none" stroke="#9CF0F4" stroke-width="1.2" filter="url(#glowS)"/>
+
+      <!-- aileron -->
+      <path d="M 26 -9 L 36 -9 L 40 -7" fill="none" stroke="#3DEAF1" stroke-width="1"/>
+
+      <!-- roues stroke pur -->
+      <g transform="translate(-25,14)">
+        <ellipse rx="8" ry="7" fill="none" stroke="#3DEAF1" stroke-width="1.4" filter="url(#glowS)"/>
+        <ellipse rx="3.4" ry="3" fill="none" stroke="#3DEAF1" stroke-width="0.7"/>
+      </g>
+      <g transform="translate(25,14)">
+        <ellipse rx="7.5" ry="6.4" fill="none" stroke="#3DEAF1" stroke-width="1.2" filter="url(#glowS)"/>
+      </g>
+    </g>
+
+    <!-- arc reflet -->
+    <path d="M 18 88 Q 54 102 90 88"
+          fill="none" stroke="#3DEAF1" stroke-width="1.8" opacity="0.6" filter="url(#glowM)"/>
+  </symbol>
+
+  <!-- ============ F4 · CERCLE NEON + 206 RX dans masque safe-zone ============ -->
+  <symbol id="iconF4" viewBox="0 0 108 108">
+    <rect width="108" height="108" fill="url(#bgRadialN)"/>
+
+    <!-- triple ring : halo + bord cyan + bord blanc -->
+    <circle cx="54" cy="54" r="48" fill="none" stroke="#3DEAF1" stroke-width="1" opacity="0.25" filter="url(#glowL)"/>
+    <circle cx="54" cy="54" r="42" fill="none" stroke="#3DEAF1" stroke-width="2.2" filter="url(#glowM)"/>
+
+    <!-- voiture plus petite, décentrée vers le bas -->
+    <g transform="translate(54,60) scale(0.62)">
+      <use href="#car206"/>
+    </g>
+
+    <!-- texte HOTWHEELS / COMMAND en arc dans le top du cercle -->
+    <defs>
+      <path id="topArc" d="M 16 54 A 38 38 0 0 1 92 54"/>
+    </defs>
+    <text font-family="JetBrains Mono" font-size="6.8" font-weight="700" letter-spacing="2" fill="#3DEAF1" filter="url(#glowS)">
+      <textPath href="#topArc" startOffset="50%" text-anchor="middle">HOTWHEELS COMMAND</textPath>
+    </text>
+
+    <!-- arc reflet bas -->
+    <path d="M 22 86 Q 54 98 86 86"
+          fill="none" stroke="#3DEAF1" stroke-width="1.4" opacity="0.55" filter="url(#glowM)"/>
+  </symbol>
+</defs>
+</svg>
+
+<!-- ============ HEADER ============ -->
+<header class="text-center mb-12">
+  <div class="text-[10px] tracking-[0.4em] text-[#3DEAF1]/40 mb-3">▸ MOCKUP — ADAPTATIONS DU LOGO « 206 RX MINIMALIST » ◂</div>
+  <h1 class="page-h1">HOTWHEELS COMMAND</h1>
+  <div class="text-xs tracking-[0.3em] text-[#3DEAF1]/30 mt-3">CERCLE NÉON + 206 RX · 4 NIVEAUX DE FIDÉLITÉ · viewBox 108×108</div>
+  <div class="mt-3 inline-flex items-center gap-2 text-[10px] tracking-[0.4em]">
+    <span class="h-px w-8 bg-[#FF2DAA]/40"></span>
+    <span class="signature">concept by Tom LEBRETON</span>
+    <span class="h-px w-8 bg-[#FF2DAA]/40"></span>
+  </div>
+</header>
+
+<div class="max-w-[1300px] mx-auto space-y-12">
+
+  <div style="border:1px dashed rgba(61,234,241,0.25); border-radius:8px; padding:10px 14px; background:rgba(61,234,241,0.03); font-size:0.7rem; color:rgba(61,234,241,0.7); line-height:1.6;">
+    <strong>EXTRACTIONS de l'image source :</strong> cercle néon cyan ouvert (avec arc-réflexion en bas), silhouette 206 RC en 3/4 face, palette duotone (gris foncé + cyan néon), reflet sol, fond très sombre. <br>
+    <strong>CONTRAINTE LAUNCHER :</strong> à 48 px le texte "HOTWHEELS COMMAND" devient illisible — d'où les 4 variantes à fidélité décroissante.
+  </div>
+
+  <!-- ====== F1 ====== -->
+  <section>
+    <div class="flex items-center gap-3 mb-4">
+      <span class="label-chip">F1 · LITERAL — cercle + 206 RX, sans texte</span>
+      <span class="text-xs text-[#3DEAF1]/60">Fidèle à l'image, sans le wordmark (illisible à petite taille). Voiture pleine + cercle néon + reflet bas</span>
+    </div>
+    <div class="grid grid-cols-3 gap-6 items-center">
+      <div class="flex flex-col items-center gap-2"><div class="icon-frame"><div class="mask-rounded h-full"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconF1"/></svg></div></div><span class="text-[9px] tracking-widest text-[#3DEAF1]/60">CARRÉ ARRONDI</span></div>
+      <div class="flex flex-col items-center gap-2"><div class="icon-frame"><div class="mask-circle h-full"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconF1"/></svg></div></div><span class="text-[9px] tracking-widest text-[#3DEAF1]/60">ROND</span></div>
+      <div class="flex flex-col items-center gap-2"><div class="icon-frame"><div class="mask-squircle h-full"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconF1"/></svg></div></div><span class="text-[9px] tracking-widest text-[#3DEAF1]/60">SQUIRCLE</span></div>
+    </div>
+    <div class="mt-3 text-[10px] text-[#3DEAF1]/50 tracking-wider">+ Le plus fidèle à l'image source · - Détails fins de la 206 fragiles à 48 px</div>
+  </section>
+
+  <!-- ====== F2 ====== -->
+  <section>
+    <div class="flex items-center gap-3 mb-4">
+      <span class="label-chip">F2 · CERCLE + HW + 206 RX (compromis)</span>
+      <span class="text-xs text-[#3DEAF1]/60">Le wordmark est remplacé par le monogramme « HW » Doto compact en haut du cercle. La voiture descend pour faire de la place</span>
+    </div>
+    <div class="grid grid-cols-3 gap-6 items-center">
+      <div class="flex flex-col items-center gap-2"><div class="icon-frame"><div class="mask-rounded h-full"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconF2"/></svg></div></div><span class="text-[9px] tracking-widest text-[#3DEAF1]/60">CARRÉ ARRONDI</span></div>
+      <div class="flex flex-col items-center gap-2"><div class="icon-frame"><div class="mask-circle h-full"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconF2"/></svg></div></div><span class="text-[9px] tracking-widest text-[#3DEAF1]/60">ROND</span></div>
+      <div class="flex flex-col items-center gap-2"><div class="icon-frame"><div class="mask-squircle h-full"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconF2"/></svg></div></div><span class="text-[9px] tracking-widest text-[#3DEAF1]/60">SQUIRCLE</span></div>
+    </div>
+    <div class="mt-3 text-[10px] text-[#3DEAF1]/50 tracking-wider">+ Garde l'esprit "wordmark dans le cercle" · - Voiture rapetissée perd des détails</div>
+  </section>
+
+  <!-- ====== F3 ====== -->
+  <section>
+    <div class="flex items-center gap-3 mb-4">
+      <span class="label-chip">F3 · NEON STROKE PUR — voiture en contour seulement</span>
+      <span class="text-xs text-[#3DEAF1]/60">Tout en stroke cyan, plus de remplissage. Cercle plus épais, voiture en silhouette nette. Le plus "néon enseigne"</span>
+    </div>
+    <div class="grid grid-cols-3 gap-6 items-center">
+      <div class="flex flex-col items-center gap-2"><div class="icon-frame"><div class="mask-rounded h-full"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconF3"/></svg></div></div><span class="text-[9px] tracking-widest text-[#3DEAF1]/60">CARRÉ ARRONDI</span></div>
+      <div class="flex flex-col items-center gap-2"><div class="icon-frame"><div class="mask-circle h-full"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconF3"/></svg></div></div><span class="text-[9px] tracking-widest text-[#3DEAF1]/60">ROND</span></div>
+      <div class="flex flex-col items-center gap-2"><div class="icon-frame"><div class="mask-squircle h-full"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconF3"/></svg></div></div><span class="text-[9px] tracking-widest text-[#3DEAF1]/60">SQUIRCLE</span></div>
+    </div>
+    <div class="mt-3 text-[10px] text-[#3DEAF1]/50 tracking-wider">+ Lisible même à 48 px · + Style "néon enseigne" très assumé · - S'éloigne légèrement de l'aspect 3D de l'original</div>
+  </section>
+
+  <!-- ====== F4 ====== -->
+  <section>
+    <div class="flex items-center gap-3 mb-4">
+      <span class="label-chip">F4 · CERCLE + ARC TEXTE « HOTWHEELS COMMAND »</span>
+      <span class="text-xs text-[#3DEAF1]/60">Texte du wordmark courbé en arc dans le haut du cercle (style logo équipe sportive). 206 RX réduite mais lisible</span>
+    </div>
+    <div class="grid grid-cols-3 gap-6 items-center">
+      <div class="flex flex-col items-center gap-2"><div class="icon-frame"><div class="mask-rounded h-full"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconF4"/></svg></div></div><span class="text-[9px] tracking-widest text-[#3DEAF1]/60">CARRÉ ARRONDI</span></div>
+      <div class="flex flex-col items-center gap-2"><div class="icon-frame"><div class="mask-circle h-full"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconF4"/></svg></div></div><span class="text-[9px] tracking-widest text-[#3DEAF1]/60">ROND</span></div>
+      <div class="flex flex-col items-center gap-2"><div class="icon-frame"><div class="mask-squircle h-full"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconF4"/></svg></div></div><span class="text-[9px] tracking-widest text-[#3DEAF1]/60">SQUIRCLE</span></div>
+    </div>
+    <div class="mt-3 text-[10px] text-[#3DEAF1]/50 tracking-wider">+ Garde le texte intégral · - Difficilement lisible à 48 px (sera quasi un trait flou)</div>
+  </section>
+
+  <!-- ====== Comparatif tailles reelles ====== -->
+  <section class="border-t border-[#3DEAF1]/15 pt-8 mt-12">
+    <div class="text-center text-[10px] tracking-[0.4em] text-[#3DEAF1]/40 mb-6">▸ COMPARATIF TAILLES RÉELLES — 96 px (drawer) · 48 px (status bar) ◂</div>
+    <div class="grid grid-cols-4 gap-8">
+      <div class="flex flex-col items-center gap-3">
+        <div style="width:96px;height:96px;border-radius:18px;overflow:hidden;background:#000;"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconF1"/></svg></div>
+        <div style="width:48px;height:48px;border-radius:9px;overflow:hidden;background:#000;"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconF1"/></svg></div>
+        <span class="text-[10px] tracking-widest text-[#3DEAF1]/60">F1 · LITERAL</span>
+      </div>
+      <div class="flex flex-col items-center gap-3">
+        <div style="width:96px;height:96px;border-radius:18px;overflow:hidden;background:#000;"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconF2"/></svg></div>
+        <div style="width:48px;height:48px;border-radius:9px;overflow:hidden;background:#000;"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconF2"/></svg></div>
+        <span class="text-[10px] tracking-widest text-[#3DEAF1]/60">F2 · + HW</span>
+      </div>
+      <div class="flex flex-col items-center gap-3">
+        <div style="width:96px;height:96px;border-radius:18px;overflow:hidden;background:#000;"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconF3"/></svg></div>
+        <div style="width:48px;height:48px;border-radius:9px;overflow:hidden;background:#000;"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconF3"/></svg></div>
+        <span class="text-[10px] tracking-widest text-[#3DEAF1]/60">F3 · STROKE PUR</span>
+      </div>
+      <div class="flex flex-col items-center gap-3">
+        <div style="width:96px;height:96px;border-radius:18px;overflow:hidden;background:#000;"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconF4"/></svg></div>
+        <div style="width:48px;height:48px;border-radius:9px;overflow:hidden;background:#000;"><svg class="icon-svg" viewBox="0 0 108 108"><use href="#iconF4"/></svg></div>
+        <span class="text-[10px] tracking-widest text-[#3DEAF1]/60">F4 · + ARC TEXTE</span>
+      </div>
+    </div>
+  </section>
+</div>
+
+<footer class="mt-16 text-center">
+  <div class="inline-flex items-center gap-2 text-[10px] tracking-[0.4em]">
+    <span class="h-px w-8 bg-[#FF2DAA]/40"></span>
+    <span class="signature">designed by Tom LEBRETON</span>
+    <span class="h-px w-8 bg-[#FF2DAA]/40"></span>
+  </div>
+</footer>
+
+</body>
+</html>
