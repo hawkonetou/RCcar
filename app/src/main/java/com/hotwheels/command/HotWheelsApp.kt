@@ -3,12 +3,14 @@ package com.hotwheels.command
 import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import com.hotwheels.command.ui.theme.ThemeStore
 import com.hotwheels.command.util.DiagLog
 
 class HotWheelsApp : Application() {
     override fun onCreate() {
         super.onCreate()
         DiagLog.init(this)
+        ThemeStore.init(this)
         DiagLog.log("APP", "onCreate start")
         installCrashHandler()
         try {

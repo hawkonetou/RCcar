@@ -23,34 +23,45 @@ val MonoFamily: FontFamily = FontFamily(
     Font(R.font.jetbrains_mono, weight = FontWeight.Bold)
 )
 
+/**
+ * Échelle typographique HotWheels Command — bumpée vs v0.3.0 pour répondre aux
+ * critères de lisibilité WCAG. Tailles UI minimales : 12sp pour les libellés, 14sp
+ * pour le corps. Les graduations/timestamps tolèrent 11sp (large text + AA cyan).
+ */
 val HotWheelsTypography = Typography(
     displayLarge = TextStyle(
         fontFamily = DotoFamily,
         fontWeight = FontWeight.Black,
-        fontSize = 140.sp,
+        fontSize = 160.sp,
         letterSpacing = 0.sp
     ),
     displayMedium = TextStyle(
         fontFamily = DotoFamily,
         fontWeight = FontWeight.Black,
-        fontSize = 28.sp,
+        fontSize = 32.sp,
         letterSpacing = 2.sp
     ),
     titleMedium = TextStyle(
         fontFamily = MonoFamily,
-        fontWeight = FontWeight.Medium,
-        fontSize = 14.sp,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 16.sp,
         letterSpacing = 1.5.sp
     ),
     bodyMedium = TextStyle(
         fontFamily = MonoFamily,
         fontWeight = FontWeight.Normal,
-        fontSize = 12.sp
+        fontSize = 14.sp
+    ),
+    labelMedium = TextStyle(
+        fontFamily = MonoFamily,
+        fontWeight = FontWeight.Medium,
+        fontSize = 12.sp,
+        letterSpacing = 1.5.sp
     ),
     labelSmall = TextStyle(
         fontFamily = MonoFamily,
         fontWeight = FontWeight.Normal,
-        fontSize = 10.sp,
+        fontSize = 11.sp,
         letterSpacing = 1.5.sp
     )
 )

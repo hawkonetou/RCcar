@@ -27,9 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -38,15 +36,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hotwheels.command.ui.components.DiagButton
 import com.hotwheels.command.ui.components.DiagSheet
 import com.hotwheels.command.ui.components.ScanlineBackground
-import com.hotwheels.command.ui.theme.AccentElectric
-import com.hotwheels.command.ui.theme.AccentMagenta
-import com.hotwheels.command.ui.theme.BgPrimary
-import com.hotwheels.command.ui.theme.BgSurface
-import com.hotwheels.command.ui.theme.CyanDim35
-import com.hotwheels.command.ui.theme.CyanDim50
+import com.hotwheels.command.ui.components.ThemeToggleButton
+import com.hotwheels.command.ui.theme.LocalPalette
 import com.hotwheels.command.ui.theme.MonoFamily
-import com.hotwheels.command.ui.theme.TextMuted
-import com.hotwheels.command.ui.theme.TextPrimary
 
 @Composable
 fun DeviceSelectionScreen(
@@ -54,17 +46,17 @@ fun DeviceSelectionScreen(
     lastError: String? = null,
     onDeviceSelected: (PairedDevice) -> Unit
 ) {
+    val palette = LocalPalette.current
     val devices by viewModel.devices.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var diagOpen by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) { viewModel.refresh() }
 
-    Box(modifier = Modifier.fillMaxSize().background(BgPrimary)) {
+    Box(modifier = Modifier.fillMaxSize().background(palette.bg)) {
         ScanlineBackground()
         Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
 
-            // Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -73,22 +65,28 @@ fun DeviceSelectionScreen(
                 Column {
                     Text(
                         text = "▸ APPAREILS APPAIRÉS",
-                        color = AccentElectric,
+                        color = palette.accent,
                         fontFamily = MonoFamily,
-                        fontSize = 14.sp,
+                        fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold,
                         letterSpacing = 2.sp
                     )
                     Text(
                         text = "concept by Tom LEBRETON",
-                        color = AccentMagenta.copy(alpha = 0.7f),
+                        color = palette.magenta,
                         fontFamily = MonoFamily,
                         fontStyle = FontStyle.Italic,
-                        fontSize = 9.sp,
+                        fontSize = 11.sp,
                         letterSpacing = 1.5.sp
                     )
                 }
-                DiagButton(onClick = { diagOpen = true })
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    ThemeToggleButton()
+                    DiagButton(onClick = { diagOpen = true })
+                }
             }
             Spacer(Modifier.height(12.dp))
 
@@ -96,15 +94,16 @@ fun DeviceSelectionScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(Color(0x33FF1744))
-                        .border(1.dp, Color(0xFFFF1744))
-                        .padding(8.dp)
+                        .background(palette.stateError.copy(alpha = 0.18f))
+                        .border(1.dp, palette.stateError)
+                        .padding(10.dp)
                 ) {
                     Text(
                         text = "▸ ÉCHEC : $lastError",
-                        color = Color(0xFFFF8A95),
+                        color = palette.stateError,
                         fontFamily = MonoFamily,
-                        fontSize = 11.sp
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium
                     )
                 }
                 Spacer(Modifier.height(8.dp))
@@ -115,26 +114,26 @@ fun DeviceSelectionScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .border(1.dp, CyanDim35)
-                            .background(BgSurface)
+                            .border(1.dp, palette.accentDim35)
+                            .background(palette.surface)
                             .clickable { onDeviceSelected(device) }
-                            .padding(14.dp)
+                            .padding(16.dp)
                     ) {
                         Column {
                             Text(
                                 text = device.name,
-                                color = TextPrimary,
+                                color = palette.textPrimary,
                                 fontFamily = MonoFamily,
                                 fontWeight = FontWeight.SemiBold,
-                                fontSize = 14.sp,
+                                fontSize = 16.sp,
                                 letterSpacing = 1.sp
                             )
                             Spacer(Modifier.height(2.dp))
                             Text(
                                 text = "▸ ${device.address}",
-                                color = CyanDim50,
+                                color = palette.textMuted,
                                 fontFamily = MonoFamily,
-                                fontSize = 10.sp,
+                                fontSize = 12.sp,
                                 letterSpacing = 1.sp
                             )
                         }
@@ -150,12 +149,12 @@ fun DeviceSelectionScreen(
             ) {
                 Button(
                     onClick = { viewModel.refresh() },
-                    colors = ButtonDefaults.buttonColors(containerColor = BgSurface, contentColor = AccentElectric)
-                ) { Text("ACTUALISER", fontSize = 10.sp, fontFamily = MonoFamily, letterSpacing = 2.sp) }
+                    colors = ButtonDefaults.buttonColors(containerColor = palette.surface, contentColor = palette.accent)
+                ) { Text("ACTUALISER", fontSize = 12.sp, fontFamily = MonoFamily, letterSpacing = 2.sp) }
                 Button(
                     onClick = { context.startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS)) },
-                    colors = ButtonDefaults.buttonColors(containerColor = BgSurface, contentColor = AccentElectric)
-                ) { Text("RÉGLAGES BT", fontSize = 10.sp, fontFamily = MonoFamily, letterSpacing = 2.sp) }
+                    colors = ButtonDefaults.buttonColors(containerColor = palette.surface, contentColor = palette.accent)
+                ) { Text("RÉGLAGES BT", fontSize = 12.sp, fontFamily = MonoFamily, letterSpacing = 2.sp) }
             }
         }
 

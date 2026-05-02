@@ -21,7 +21,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -40,15 +39,10 @@ import com.hotwheels.command.ui.components.LedState
 import com.hotwheels.command.ui.components.NeonVerticalSlider
 import com.hotwheels.command.ui.components.ScanlineBackground
 import com.hotwheels.command.ui.components.TelemetryCard
-import com.hotwheels.command.ui.theme.AccentElectric
-import com.hotwheels.command.ui.theme.AccentMagenta
-import com.hotwheels.command.ui.theme.BgPrimary
-import com.hotwheels.command.ui.theme.CyanDim20
-import com.hotwheels.command.ui.theme.CyanDim35
-import com.hotwheels.command.ui.theme.CyanDim50
+import com.hotwheels.command.ui.components.ThemeToggleButton
 import com.hotwheels.command.ui.theme.DotoFamily
+import com.hotwheels.command.ui.theme.LocalPalette
 import com.hotwheels.command.ui.theme.MonoFamily
-import com.hotwheels.command.ui.theme.TextPrimary
 import kotlin.math.abs
 
 @Composable
@@ -57,6 +51,7 @@ fun DriveScreen(
     viewModel: DriveViewModel,
     battery: BatteryState? = null
 ) {
+    val palette = LocalPalette.current
     val enabled = state is ConnectionState.Connected
     var sliderValue by remember { mutableIntStateOf(0) }
     var diagOpen by remember { mutableStateOf(false) }
@@ -81,7 +76,7 @@ fun DriveScreen(
         else -> "--:--:--:--:--:--"
     }
 
-    Box(modifier = Modifier.fillMaxSize().background(BgPrimary)) {
+    Box(modifier = Modifier.fillMaxSize().background(palette.bg)) {
         ScanlineBackground()
         Column(modifier = Modifier.fillMaxSize().padding(12.dp)) {
 
@@ -131,6 +126,7 @@ private fun TopBar(
     battery: BatteryState?,
     onDiag: () -> Unit
 ) {
+    val palette = LocalPalette.current
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -143,32 +139,33 @@ private fun TopBar(
             LedDot(state = ledState)
             Text(
                 text = deviceName,
-                color = AccentElectric,
+                color = palette.accent,
                 fontFamily = MonoFamily,
                 fontWeight = FontWeight.SemiBold,
-                fontSize = 12.sp,
+                fontSize = 14.sp,
                 letterSpacing = 1.5.sp
             )
             Text(
                 text = "▸ $deviceMac",
-                color = CyanDim50,
+                color = palette.textMuted,
                 fontFamily = MonoFamily,
-                fontSize = 10.sp,
+                fontSize = 12.sp,
                 letterSpacing = 1.sp
             )
             Text(
                 text = "concept by Tom LEBRETON",
-                color = AccentMagenta.copy(alpha = 0.7f),
+                color = palette.magenta,
                 fontFamily = MonoFamily,
                 fontStyle = FontStyle.Italic,
-                fontSize = 9.sp,
+                fontSize = 11.sp,
                 letterSpacing = 1.5.sp
             )
         }
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            ThemeToggleButton()
             DiagButton(onClick = onDiag)
             BatteryBadge(battery = battery)
         }
@@ -183,13 +180,13 @@ private fun ConnectedHud(
     onSliderRelease: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val palette = LocalPalette.current
     Row(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // LEFT — telemetry cards
         Column(
-            modifier = Modifier.width(150.dp),
+            modifier = Modifier.width(160.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             TelemetryCard(label = "DIRECTION", accent = true) {
@@ -199,9 +196,9 @@ private fun ConnectedHud(
                     text = if (sliderValue > 0) "▶ AVANT"
                     else if (sliderValue < 0) "◀ ARRIÈRE"
                     else "■ ARRÊT",
-                    color = AccentElectric,
+                    color = palette.accent,
                     fontFamily = MonoFamily,
-                    fontSize = 11.sp,
+                    fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
                     letterSpacing = 1.sp
                 )
@@ -211,26 +208,26 @@ private fun ConnectedHud(
                 Row(verticalAlignment = Alignment.Bottom) {
                     Text(
                         text = pwm.toString(),
-                        color = AccentElectric,
+                        color = palette.accent,
                         fontFamily = DotoFamily,
                         fontWeight = FontWeight.Black,
-                        fontSize = 22.sp
+                        fontSize = 26.sp
                     )
                     Spacer(Modifier.width(4.dp))
                     Text(
                         text = "/ 255",
-                        color = CyanDim50.copy(alpha = 0.55f),
+                        color = palette.textSubtle,
                         fontFamily = MonoFamily,
-                        fontSize = 10.sp
+                        fontSize = 12.sp
                     )
                 }
             }
             TelemetryCard(label = "SIGNAL") {
                 Text(
                     text = if (enabled) "▣ ACTIF" else "▣ INACTIF",
-                    color = AccentElectric,
+                    color = palette.accent,
                     fontFamily = MonoFamily,
-                    fontSize = 11.sp,
+                    fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
                     letterSpacing = 1.sp
                 )
@@ -239,7 +236,6 @@ private fun ConnectedHud(
 
         Spacer(Modifier.width(12.dp))
 
-        // CENTER — big number with brackets
         Box(
             modifier = Modifier.weight(1f).fillMaxHeight(),
             contentAlignment = Alignment.Center
@@ -250,9 +246,9 @@ private fun ConnectedHud(
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
                     text = "▸ THROTTLE % ◂",
-                    color = CyanDim50,
+                    color = palette.textMuted,
                     fontFamily = MonoFamily,
-                    fontSize = 9.sp,
+                    fontSize = 11.sp,
                     letterSpacing = 3.sp
                 )
                 Spacer(Modifier.height(2.dp))
@@ -260,9 +256,9 @@ private fun ConnectedHud(
                 Spacer(Modifier.height(2.dp))
                 Text(
                     text = "▸ ENVOI : ${-sliderValue} ◂",
-                    color = AccentElectric.copy(alpha = 0.65f),
+                    color = palette.accent,
                     fontFamily = MonoFamily,
-                    fontSize = 10.sp,
+                    fontSize = 12.sp,
                     letterSpacing = 2.5.sp
                 )
             }
@@ -270,11 +266,9 @@ private fun ConnectedHud(
 
         Spacer(Modifier.width(12.dp))
 
-        // RIGHT — vertical slider with graduations
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // graduations labels
             Column(
                 modifier = Modifier.fillMaxHeight().padding(vertical = 6.dp),
                 verticalArrangement = Arrangement.SpaceBetween,
@@ -283,9 +277,9 @@ private fun ConnectedHud(
                 listOf("+100", "+050", "+000", "-050", "-100").forEachIndexed { i, label ->
                     Text(
                         text = label,
-                        color = if (i == 2) AccentElectric else CyanDim50,
+                        color = if (i == 2) palette.accent else palette.textMuted,
                         fontFamily = MonoFamily,
-                        fontSize = 8.sp,
+                        fontSize = 11.sp,
                         letterSpacing = 1.sp
                     )
                 }
@@ -303,6 +297,7 @@ private fun ConnectedHud(
 
 @Composable
 private fun ConnectingPanel(modifier: Modifier = Modifier) {
+    val palette = LocalPalette.current
     Box(modifier = modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
         Box(modifier = Modifier.fillMaxSize().padding(horizontal = 80.dp, vertical = 40.dp)) {
             CornerBrackets()
@@ -311,17 +306,17 @@ private fun ConnectingPanel(modifier: Modifier = Modifier) {
             ConnectingRing()
             Text(
                 text = "ÉTABLISSEMENT DU LIEN",
-                color = AccentElectric,
+                color = palette.accent,
                 fontFamily = MonoFamily,
-                fontWeight = FontWeight.Medium,
-                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 15.sp,
                 letterSpacing = 4.sp
             )
             Text(
                 text = "▸ SPP RFCOMM · UUID 00001101-… ◂",
-                color = CyanDim50,
+                color = palette.textMuted,
                 fontFamily = MonoFamily,
-                fontSize = 9.sp,
+                fontSize = 11.sp,
                 letterSpacing = 2.sp
             )
         }
@@ -330,6 +325,7 @@ private fun ConnectingPanel(modifier: Modifier = Modifier) {
 
 @Composable
 private fun BottomBar(active: Boolean) {
+    val palette = LocalPalette.current
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -338,16 +334,16 @@ private fun BottomBar(active: Boolean) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(
                 text = "▣ MOTEUR",
-                color = CyanDim50,
+                color = palette.textMuted,
                 fontFamily = MonoFamily,
-                fontSize = 9.sp,
+                fontSize = 11.sp,
                 letterSpacing = 2.sp
             )
             Text(
                 text = if (active) "ACTIF" else "STAND BY",
-                color = AccentElectric,
+                color = palette.accent,
                 fontFamily = MonoFamily,
-                fontSize = 9.sp,
+                fontSize = 11.sp,
                 fontWeight = FontWeight.SemiBold,
                 letterSpacing = 2.sp
             )
@@ -355,16 +351,16 @@ private fun BottomBar(active: Boolean) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
                 text = "▶ PILOTAGE",
-                color = CyanDim50,
+                color = palette.textMuted,
                 fontFamily = MonoFamily,
-                fontSize = 9.sp,
+                fontSize = 11.sp,
                 letterSpacing = 2.sp
             )
             Text(
-                text = "v0.3.0",
-                color = CyanDim50,
+                text = "v0.4.0",
+                color = palette.textMuted,
                 fontFamily = MonoFamily,
-                fontSize = 9.sp
+                fontSize = 11.sp
             )
         }
     }

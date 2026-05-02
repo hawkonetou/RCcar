@@ -20,20 +20,17 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.hotwheels.command.bluetooth.ConnectionState
-import com.hotwheels.command.ui.theme.StateConnected
-import com.hotwheels.command.ui.theme.StateConnecting
-import com.hotwheels.command.ui.theme.StateError
-import com.hotwheels.command.ui.theme.TextMuted
-import com.hotwheels.command.ui.theme.TextPrimary
+import com.hotwheels.command.ui.theme.LocalPalette
 
 @Composable
 fun ConnectionIndicator(state: ConnectionState, modifier: Modifier = Modifier) {
+    val palette = LocalPalette.current
     val (color, label, pulseSpeedMs) = when (state) {
-        is ConnectionState.Idle -> Triple(TextMuted, "EN ATTENTE", 0)
-        is ConnectionState.Connecting -> Triple(StateConnecting, "CONNEXION…", 600)
-        is ConnectionState.Connected -> Triple(StateConnected, "CONNECTÉ — ${state.deviceName}", 1500)
-        is ConnectionState.Reconnecting -> Triple(StateConnecting, "RECONNEXION… (${state.attempt}/${state.maxAttempts})", 300)
-        is ConnectionState.Failed -> Triple(StateError, "DÉCONNECTÉ", 0)
+        is ConnectionState.Idle -> Triple(palette.textSubtle, "EN ATTENTE", 0)
+        is ConnectionState.Connecting -> Triple(palette.stateConnecting, "CONNEXION…", 600)
+        is ConnectionState.Connected -> Triple(palette.stateConnected, "CONNECTÉ — ${state.deviceName}", 1500)
+        is ConnectionState.Reconnecting -> Triple(palette.stateConnecting, "RECONNEXION… (${state.attempt}/${state.maxAttempts})", 300)
+        is ConnectionState.Failed -> Triple(palette.stateError, "DÉCONNECTÉ", 0)
     }
     val transition = rememberInfiniteTransition(label = "indicator")
     val alphaAnim by transition.animateFloat(
@@ -54,6 +51,6 @@ fun ConnectionIndicator(state: ConnectionState, modifier: Modifier = Modifier) {
                 .background(color)
         )
         Spacer(Modifier.width(8.dp))
-        Text(text = label, color = TextPrimary)
+        Text(text = label, color = palette.textPrimary)
     }
 }

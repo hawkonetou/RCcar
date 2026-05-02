@@ -27,7 +27,10 @@ import com.hotwheels.command.ui.drive.DriveViewModel
 import com.hotwheels.command.ui.select.DeviceSelectionScreen
 import com.hotwheels.command.ui.select.DeviceSelectionViewModel
 import com.hotwheels.command.ui.theme.HotWheelsTheme
+import com.hotwheels.command.ui.theme.ThemeMode
+import com.hotwheels.command.ui.theme.ThemeStore
 import com.hotwheels.command.util.DiagLog
+import androidx.core.view.WindowCompat
 import com.hotwheels.command.util.PermissionUtils
 import kotlinx.coroutines.flow.MutableStateFlow
 
@@ -89,7 +92,16 @@ class DriveActivity : ComponentActivity() {
         val store = LastDeviceStore(applicationContext)
 
         setContent {
-            HotWheelsTheme {
+            val themeMode by ThemeStore.mode.collectAsState()
+            // Adapt status/nav bars to current theme so the system chrome blends in.
+            val isLight = themeMode == ThemeMode.Light
+            val controller = remember(themeMode) { WindowCompat.getInsetsController(window, window.decorView) }
+            controller.isAppearanceLightStatusBars = isLight
+            controller.isAppearanceLightNavigationBars = isLight
+            window.statusBarColor = if (isLight) 0xFFF4F7FA.toInt() else 0xFF050709.toInt()
+            window.navigationBarColor = if (isLight) 0xFFF4F7FA.toInt() else 0xFF050709.toInt()
+
+            HotWheelsTheme(mode = themeMode) {
                 val state by (service?.state ?: fallbackState).collectAsState()
                 val battery by (service?.battery ?: fallbackBattery).collectAsState()
 

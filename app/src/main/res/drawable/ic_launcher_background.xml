@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Radial gradient base -->
+    <path android:pathData="M0,0h108v108h-108z">
+        <aapt:attr xmlns:aapt="http://schemas.android.com/aapt" name="android:fillColor">
+            <gradient
+                android:type="radial"
+                android:centerX="54"
+                android:centerY="44"
+                android:gradientRadius="76">
+                <item android:offset="0.0" android:color="#FF0A1419" />
+                <item android:offset="1.0" android:color="#FF050709" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Coin top-left -->
+    <path
+        android:pathData="M14,22 L14,14 L22,14"
+        android:strokeColor="#5900E5FF"
+        android:strokeWidth="2"
+        android:strokeLineCap="round" />
+    <!-- Coin top-right -->
+    <path
+        android:pathData="M86,14 L94,14 L94,22"
+        android:strokeColor="#5900E5FF"
+        android:strokeWidth="2"
+        android:strokeLineCap="round" />
+    <!-- Coin bottom-left -->
+    <path
+        android:pathData="M14,86 L14,94 L22,94"
+        android:strokeColor="#5900E5FF"
+        android:strokeWidth="2"
+        android:strokeLineCap="round" />
+    <!-- Coin bottom-right -->
+    <path
+        android:pathData="M86,94 L94,94 L94,86"
+        android:strokeColor="#5900E5FF"
+        android:strokeWidth="2"
+        android:strokeLineCap="round" />
+</vector>

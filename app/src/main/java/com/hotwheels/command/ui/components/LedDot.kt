@@ -13,18 +13,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.hotwheels.command.ui.theme.AccentElectric
-import com.hotwheels.command.ui.theme.StateConnecting
+import com.hotwheels.command.ui.theme.LocalPalette
 
 enum class LedState { On, Pending, Off }
 
 @Composable
 fun LedDot(state: LedState, modifier: Modifier = Modifier) {
+    val palette = LocalPalette.current
     val transition = rememberInfiniteTransition(label = "led")
     val (color, durationMs) = when (state) {
-        LedState.On      -> AccentElectric to 1600
-        LedState.Pending -> StateConnecting to 600
-        LedState.Off     -> Color(0xFF2C2C30) to 0
+        LedState.On      -> palette.stateConnected to 1600
+        LedState.Pending -> palette.stateConnecting to 600
+        LedState.Off     -> palette.ledOff to 0
     }
     val alpha by transition.animateFloat(
         initialValue = 1f,
@@ -36,7 +36,7 @@ fun LedDot(state: LedState, modifier: Modifier = Modifier) {
         label = "ledAlpha"
     )
 
-    Canvas(modifier = modifier.size(10.dp)) {
+    Canvas(modifier = modifier.size(12.dp)) {
         val r = size.minDimension / 2f
         val center = Offset(size.width / 2f, size.height / 2f)
         if (state != LedState.Off) {

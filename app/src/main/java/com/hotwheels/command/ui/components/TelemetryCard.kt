@@ -2,7 +2,6 @@ package com.hotwheels.command.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,16 +14,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.hotwheels.command.ui.theme.AccentElectric
-import com.hotwheels.command.ui.theme.BgPanel
-import com.hotwheels.command.ui.theme.CyanDim20
-import com.hotwheels.command.ui.theme.CyanDim35
-import com.hotwheels.command.ui.theme.CyanDim50
-import com.hotwheels.command.ui.theme.DotoFamily
+import com.hotwheels.command.ui.theme.LocalPalette
 import com.hotwheels.command.ui.theme.MonoFamily
 
 @Composable
@@ -34,18 +27,19 @@ fun TelemetryCard(
     accent: Boolean = false,
     content: @Composable () -> Unit
 ) {
+    val palette = LocalPalette.current
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .border(1.dp, if (accent) CyanDim35 else CyanDim20)
-            .background(BgPanel)
-            .padding(horizontal = 8.dp, vertical = 6.dp)
+            .border(1.dp, if (accent) palette.accentDim35 else palette.accentDim20)
+            .background(palette.panel)
+            .padding(horizontal = 10.dp, vertical = 8.dp)
     ) {
         Text(
             text = label,
-            color = CyanDim50,
+            color = palette.textMuted,
             fontFamily = MonoFamily,
-            fontSize = 9.sp,
+            fontSize = 11.sp,
             letterSpacing = 2.sp,
             fontWeight = FontWeight.Medium
         )
@@ -56,6 +50,7 @@ fun TelemetryCard(
 
 @Composable
 fun DirectionTriangles(motorValue: Int, modifier: Modifier = Modifier) {
+    val palette = LocalPalette.current
     val absVal = kotlin.math.abs(motorValue).coerceIn(0, 100)
     val activeCount = ((absVal + 19) / 20).coerceAtMost(5)
     val pointRight = motorValue >= 0
@@ -64,7 +59,7 @@ fun DirectionTriangles(motorValue: Int, modifier: Modifier = Modifier) {
             val isActive = i < activeCount
             TriangleArrow(
                 pointRight = pointRight,
-                color = if (isActive) AccentElectric else CyanDim20
+                color = if (isActive) palette.accent else palette.accentDim20
             )
             if (i < 4) Spacer(Modifier.size(2.dp))
         }

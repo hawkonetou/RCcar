@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -28,26 +27,21 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hotwheels.command.bluetooth.BatteryState
-import com.hotwheels.command.ui.theme.AccentElectric
-import com.hotwheels.command.ui.theme.AccentLime
+import com.hotwheels.command.ui.theme.LocalPalette
 import com.hotwheels.command.ui.theme.MonoFamily
-import com.hotwheels.command.ui.theme.StateConnecting
-import com.hotwheels.command.ui.theme.StateError
-import com.hotwheels.command.ui.theme.TextMuted
 
 @Composable
 fun BatteryBadge(battery: BatteryState?, modifier: Modifier = Modifier) {
+    val palette = LocalPalette.current
     val (fillColor, accentColor) = when {
-        battery == null -> Brush.horizontalGradient(listOf(TextMuted, TextMuted)) to TextMuted
-        battery.percent <= 20 -> Brush.horizontalGradient(listOf(StateConnecting, StateError)) to StateError
-        battery.percent <= 50 -> Brush.horizontalGradient(listOf(AccentElectric, StateConnecting)) to StateConnecting
-        else -> Brush.horizontalGradient(listOf(AccentElectric, AccentLime)) to AccentElectric
+        battery == null -> Brush.horizontalGradient(listOf(palette.textSubtle, palette.textSubtle)) to palette.textSubtle
+        battery.percent <= 20 -> Brush.horizontalGradient(listOf(palette.stateConnecting, palette.stateError)) to palette.stateError
+        battery.percent <= 50 -> Brush.horizontalGradient(listOf(palette.accent, palette.stateConnecting)) to palette.stateConnecting
+        else -> Brush.horizontalGradient(listOf(palette.accent, palette.lime)) to palette.accent
     }
 
     val transition = rememberInfiniteTransition(label = "bat")
@@ -64,14 +58,14 @@ fun BatteryBadge(battery: BatteryState?, modifier: Modifier = Modifier) {
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier
     ) {
-        Box(modifier = Modifier.size(width = 56.dp, height = 22.dp)) {
+        Box(modifier = Modifier.size(width = 64.dp, height = 26.dp)) {
             Box(
                 modifier = Modifier
                     .fillMaxHeight()
-                    .width(50.dp)
+                    .width(58.dp)
                     .border(1.5.dp, accentColor, RoundedCornerShape(3.dp))
                     .padding(2.dp)
             ) {
@@ -82,9 +76,9 @@ fun BatteryBadge(battery: BatteryState?, modifier: Modifier = Modifier) {
                             .fillMaxHeight()
                             .clip(RoundedCornerShape(1.dp))
                             .background(fillColor)
-                            .width((46.dp.value * pct / 100f).dp)
+                            .width((54.dp.value * pct / 100f).dp)
                     ) {
-                        Canvas(modifier = Modifier.fillMaxHeight().width((46.dp.value * pct / 100f).dp)) {
+                        Canvas(modifier = Modifier.fillMaxHeight().width((54.dp.value * pct / 100f).dp)) {
                             val seg = 4f
                             var x = 0f
                             while (x < size.width) {
@@ -99,12 +93,11 @@ fun BatteryBadge(battery: BatteryState?, modifier: Modifier = Modifier) {
                     }
                 }
             }
-            // battery cap
             Box(
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
-                    .height(10.dp)
-                    .width(4.dp)
+                    .height(12.dp)
+                    .width(5.dp)
                     .background(accentColor, RoundedCornerShape(topEnd = 2.dp, bottomEnd = 2.dp))
             )
         }
@@ -114,20 +107,20 @@ fun BatteryBadge(battery: BatteryState?, modifier: Modifier = Modifier) {
                 color = accentColor,
                 fontFamily = MonoFamily,
                 fontWeight = FontWeight.SemiBold,
-                fontSize = 13.sp,
+                fontSize = 14.sp,
                 letterSpacing = 1.sp
             )
             if (battery != null) {
                 Text(
                     text = "%.2f V".format(battery.volts),
-                    color = accentColor.copy(alpha = 0.5f),
+                    color = palette.textMuted,
                     fontFamily = MonoFamily,
-                    fontWeight = FontWeight.Light,
-                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Normal,
+                    fontSize = 11.sp,
                     letterSpacing = 1.sp
                 )
             }
         }
     }
-    @Suppress("UNUSED_EXPRESSION") brightness // keep animation alive
+    @Suppress("UNUSED_EXPRESSION") brightness
 }

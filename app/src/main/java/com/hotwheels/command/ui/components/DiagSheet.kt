@@ -25,22 +25,18 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.hotwheels.command.ui.theme.AccentElectric
-import com.hotwheels.command.ui.theme.BgPrimary
-import com.hotwheels.command.ui.theme.BgSurface
-import com.hotwheels.command.ui.theme.CyanDim35
+import com.hotwheels.command.ui.theme.LocalPalette
 import com.hotwheels.command.ui.theme.MonoFamily
-import com.hotwheels.command.ui.theme.TextPrimary
 import com.hotwheels.command.util.DiagLog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DiagSheet(onDismiss: () -> Unit) {
+    val palette = LocalPalette.current
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val entries by DiagLog.entries.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
@@ -51,8 +47,8 @@ fun DiagSheet(onDismiss: () -> Unit) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = BgPrimary,
-        contentColor = AccentElectric,
+        containerColor = palette.bg,
+        contentColor = palette.accent,
         dragHandle = null
     ) {
         Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
@@ -63,39 +59,39 @@ fun DiagSheet(onDismiss: () -> Unit) {
             ) {
                 Text(
                     text = "▸ JOURNAL DIAG (${entries.size})",
-                    color = AccentElectric,
+                    color = palette.accent,
                     fontFamily = MonoFamily,
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 15.sp,
                     letterSpacing = 2.sp
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(
                         onClick = { DiagLog.clear() },
-                        colors = ButtonDefaults.buttonColors(containerColor = BgSurface, contentColor = AccentElectric)
-                    ) { Text("EFFACER", fontSize = 10.sp) }
+                        colors = ButtonDefaults.buttonColors(containerColor = palette.surface, contentColor = palette.accent)
+                    ) { Text("EFFACER", fontSize = 12.sp, fontFamily = MonoFamily, letterSpacing = 1.5.sp) }
                     Button(
                         onClick = onDismiss,
-                        colors = ButtonDefaults.buttonColors(containerColor = BgSurface, contentColor = AccentElectric)
-                    ) { Text("FERMER", fontSize = 10.sp) }
+                        colors = ButtonDefaults.buttonColors(containerColor = palette.surface, contentColor = palette.accent)
+                    ) { Text("FERMER", fontSize = 12.sp, fontFamily = MonoFamily, letterSpacing = 1.5.sp) }
                 }
             }
             Spacer(Modifier.height(8.dp))
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .border(1.dp, CyanDim35)
-                    .background(BgSurface)
-                    .padding(6.dp)
+                    .border(1.dp, palette.accentDim35)
+                    .background(palette.surface)
+                    .padding(8.dp)
             ) {
                 LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
                     items(entries) { entry ->
                         Text(
                             text = entry,
-                            color = TextPrimary,
+                            color = palette.textPrimary,
                             fontFamily = MonoFamily,
-                            fontSize = 9.sp,
-                            lineHeight = 12.sp
+                            fontSize = 12.sp,
+                            lineHeight = 15.sp
                         )
                     }
                 }

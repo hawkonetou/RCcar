@@ -17,12 +17,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.hotwheels.command.ui.theme.AccentElectric
-import com.hotwheels.command.ui.theme.AccentMagenta
 import com.hotwheels.command.ui.theme.DotoFamily
+import com.hotwheels.command.ui.theme.LocalPalette
 
 @Composable
 fun BigThrottleNumber(value: Int, modifier: Modifier = Modifier) {
+    val palette = LocalPalette.current
     val transition = rememberInfiniteTransition(label = "num")
     val glow by transition.animateFloat(
         initialValue = 0.85f,
@@ -34,13 +34,16 @@ fun BigThrottleNumber(value: Int, modifier: Modifier = Modifier) {
         label = "numGlow"
     )
 
+    val ghostAlpha = if (palette.isDark) 0.55f else 0.4f
+    val shadowAlpha = if (palette.isDark) glow * 0.85f else glow * 0.35f
+
     Box(
         modifier = modifier.fillMaxWidth(),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = value.toString(),
-            color = AccentMagenta.copy(alpha = 0.55f),
+            color = palette.magenta.copy(alpha = ghostAlpha),
             style = MaterialTheme.typography.displayLarge,
             fontFamily = DotoFamily,
             fontWeight = FontWeight.Black,
@@ -48,7 +51,7 @@ fun BigThrottleNumber(value: Int, modifier: Modifier = Modifier) {
         )
         Text(
             text = value.toString(),
-            color = AccentElectric.copy(alpha = 0.55f),
+            color = palette.accent.copy(alpha = ghostAlpha),
             style = MaterialTheme.typography.displayLarge,
             fontFamily = DotoFamily,
             fontWeight = FontWeight.Black,
@@ -56,10 +59,10 @@ fun BigThrottleNumber(value: Int, modifier: Modifier = Modifier) {
         )
         Text(
             text = value.toString(),
-            color = AccentElectric,
+            color = palette.accent,
             style = MaterialTheme.typography.displayLarge.copy(
                 shadow = Shadow(
-                    color = AccentElectric.copy(alpha = glow * 0.85f),
+                    color = palette.accent.copy(alpha = shadowAlpha),
                     blurRadius = 32f * glow
                 )
             ),
